@@ -8,6 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Calendar, Calculator, Star, Clock, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { addDays, format } from 'date-fns';
+import * as jalaali from 'jalaali-js';
 interface DateInput {
   year: string;
   month: string;
@@ -211,6 +212,104 @@ const PersianCalculator: React.FC = () => {
       setLoading(false);
     }
   };
+
+  // Convert Persian date to Hebrew date
+  const persianToHebrew = (year: string, month: string, day: string): string => {
+    try {
+      const persianYear = parseInt(year);
+      const persianMonth = parseInt(month);
+      const persianDay = parseInt(day);
+      
+      // Convert Persian to Gregorian
+      const gregorian = jalaali.toGregorian(persianYear, persianMonth, persianDay);
+      const gregorianDate = new Date(gregorian.gy, gregorian.gm - 1, gregorian.gd);
+      
+      // Convert Gregorian to Hebrew
+      const hebrewDate = new Intl.DateTimeFormat('he-IL-u-ca-hebrew', {
+        year: 'numeric',
+        month: 'long', 
+        day: 'numeric'
+      }).format(gregorianDate);
+      
+      // Convert Hebrew month names to Persian/Farsi equivalents
+      const monthMap: { [key: string]: string } = {
+        'תשרי': 'تیشری',
+        'חשון': 'حشوان', 
+        'חשוון': 'حشوان',
+        'כסלו': 'کیسلو',
+        'טבת': 'طوت',
+        'שבט': 'شواط',
+        'אדר': 'آدار',
+        'אדר א': 'آدار اول',
+        'אדר ב': 'آدار دوم', 
+        'ניסן': 'نیسان',
+        'אייר': 'ایار',
+        'סיון': 'سیوان',
+        'סיוון': 'سیوان',
+        'תמוז': 'تموز',
+        'אב': 'آو',
+        'אלול': 'الول'
+      };
+      
+      let convertedDate = hebrewDate;
+      for (const [hebrew, persian] of Object.entries(monthMap)) {
+        convertedDate = convertedDate.replace(hebrew, persian);
+      }
+      
+      return convertedDate;
+    } catch (error) {
+      return 'نامعتبر';
+    }
+  };
+
+  // Convert Hebrew date to Persian date  
+  const hebrewToPersian = (year: string, month: string, day: string): string => {
+    try {
+      const hebrewYear = parseInt(year);
+      const hebrewMonth = parseInt(month);
+      const hebrewDay = parseInt(day);
+      
+      // Hebrew month names for conversion
+      const monthNames = [
+        'תשרי', 'חשון', 'כסלו', 'טבת', 'שבט', 
+        'אדר', 'אדר ב', 'ניסן', 'אייר', 'סיון', 
+        'תמוז', 'אב', 'אלול'
+      ];
+      
+      // Create Hebrew date and convert to Gregorian
+      const hebrewDateStr = `${hebrewDay} ${monthNames[hebrewMonth - 1]} ${hebrewYear}`;
+      const hebrewDateObj = new Date();
+      
+      // This is a simplified conversion - in production you'd want a proper Hebrew calendar library
+      const baseGregorianYear = 2024;
+      const baseHebrewYear = 5785;
+      const yearDiff = hebrewYear - baseHebrewYear;
+      const gregorianYear = baseGregorianYear + yearDiff;
+      
+      // Approximate month mapping (Hebrew year starts in fall)
+      let gregorianMonth = hebrewMonth + 6;
+      let adjustedYear = gregorianYear;
+      if (gregorianMonth > 12) {
+        gregorianMonth -= 12;
+        adjustedYear += 1;
+      }
+      
+      const gregorianDate = new Date(adjustedYear, gregorianMonth - 1, hebrewDay);
+      
+      // Convert Gregorian to Persian
+      const jd = jalaali.toJalaali(gregorianDate.getFullYear(), gregorianDate.getMonth() + 1, gregorianDate.getDate());
+      
+      const persianMonthNames = [
+        'فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور',
+        'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'
+      ];
+      
+      return `${jd.jd} ${persianMonthNames[jd.jm - 1]} ${jd.jy}`;
+    } catch (error) {
+      return 'نامعتبر';
+    }
+  };
+
   const DateSelector: React.FC<{
     title: string;
     icon: React.ReactNode;
@@ -284,9 +383,10 @@ const PersianCalculator: React.FC = () => {
             <div className="text-center">
               <span className="text-sm text-muted-foreground">معادل: </span>
               <span className="font-bold text-primary">
-                {activeTab === 'persian' ? `${value.day} سیوان ${currentHebrewYear}` // Simplified Hebrew equivalent
-            : `${value.day} خرداد ${currentPersianYear}` // Simplified Persian equivalent
-            }
+                {activeTab === 'persian' 
+                  ? persianToHebrew(value.year, value.month, value.day)
+                  : hebrewToPersian(value.year, value.month, value.day)
+                }
               </span>
             </div>
           </div>}
