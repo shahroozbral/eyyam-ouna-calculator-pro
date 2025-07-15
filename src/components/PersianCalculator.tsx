@@ -248,11 +248,14 @@ const PersianCalculator: React.FC = () => {
       const gregorianDate = new Date(gregorian.gy, gregorian.gm - 1, gregorian.gd);
       
       // Convert Gregorian to Hebrew
-      const hebrewDate = new Intl.DateTimeFormat('he-IL-u-ca-hebrew', {
+      let hebrewDate = new Intl.DateTimeFormat('he-IL-u-ca-hebrew', {
         year: 'numeric',
         month: 'long', 
         day: 'numeric'
       }).format(gregorianDate);
+      
+      // Remove the Hebrew "ב" character that appears before month names
+      hebrewDate = hebrewDate.replace(/ב'/g, '').replace(/ב/g, '');
       
       // Convert Hebrew month names to Persian/Farsi equivalents
       const monthMap: { [key: string]: string } = {
