@@ -247,15 +247,18 @@ const PersianCalculator: React.FC = () => {
       const gregorian = jalaali.toGregorian(persianYear, persianMonth, persianDay);
       const gregorianDate = new Date(gregorian.gy, gregorian.gm - 1, gregorian.gd);
       
-      // Convert Gregorian to Hebrew
-      let hebrewDate = new Intl.DateTimeFormat('he-IL-u-ca-hebrew', {
+      // Convert Gregorian to Hebrew using proper Hebrew calendar
+      const hebrewFormatter = new Intl.DateTimeFormat('he-u-ca-hebrew', {
         year: 'numeric',
         month: 'long', 
-        day: 'numeric'
-      }).format(gregorianDate);
+        day: 'numeric',
+        numberingSystem: 'latn'
+      });
       
-      // Remove the Hebrew "ב" character that appears before month names
-      hebrewDate = hebrewDate.replace(/ב'/g, '').replace(/ב/g, '');
+      let hebrewDate = hebrewFormatter.format(gregorianDate);
+      
+      // Remove Hebrew prefixes and clean up the string
+      hebrewDate = hebrewDate.replace(/ב'/g, '').replace(/ב/g, '').replace(/'/g, '');
       
       // Convert Hebrew month names to Persian/Farsi equivalents
       const monthMap: { [key: string]: string } = {
@@ -266,6 +269,8 @@ const PersianCalculator: React.FC = () => {
         'טבת': 'طوت',
         'שבט': 'شواط',
         'אדר': 'آدار',
+        'אדר א׳': 'آدار اول',
+        'אדר ב׳': 'آدار دوم',
         'אדר א': 'آدار اول',
         'אדר ב': 'آدار دوم', 
         'ניסן': 'نیسان',
@@ -279,7 +284,7 @@ const PersianCalculator: React.FC = () => {
       
       let convertedDate = hebrewDate;
       for (const [hebrew, persian] of Object.entries(monthMap)) {
-        convertedDate = convertedDate.replace(hebrew, persian);
+        convertedDate = convertedDate.replace(new RegExp(hebrew, 'g'), persian);
       }
       
       return convertedDate;
