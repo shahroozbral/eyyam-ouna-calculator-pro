@@ -132,7 +132,7 @@ const PersianCalculator: React.FC = () => {
     length: 31
   }, (_, i) => i + 1);
   useEffect(() => {
-    // Set default values
+    // Set default values for Persian calendar
     setPrevDate({
       year: currentPersianYear.toString(),
       month: '3',
@@ -144,6 +144,29 @@ const PersianCalculator: React.FC = () => {
       day: '15'
     });
   }, []);
+
+  // Update default years when tab changes
+  useEffect(() => {
+    if (activeTab === 'hebrew') {
+      setPrevDate(prev => ({
+        ...prev,
+        year: prev.year || currentHebrewYear.toString()
+      }));
+      setLastDate(prev => ({
+        ...prev,
+        year: prev.year || currentHebrewYear.toString()
+      }));
+    } else {
+      setPrevDate(prev => ({
+        ...prev,
+        year: prev.year || currentPersianYear.toString()
+      }));
+      setLastDate(prev => ({
+        ...prev,
+        year: prev.year || currentPersianYear.toString()
+      }));
+    }
+  }, [activeTab]);
   const validateInputs = (): boolean => {
     if (!prevDate.year || !prevDate.month || !prevDate.day || !lastDate.year || !lastDate.month || !lastDate.day) {
       setError('لطفاً تمام فیلدها را پر کنید');
