@@ -64,16 +64,18 @@ const PersianCalculator: React.FC = () => {
   ];
 
   // Generate year options
-  const currentYear = 1403;
-  const years = Array.from({ length: 7 }, (_, i) => currentYear - 3 + i);
+  const currentPersianYear = 1403;
+  const currentHebrewYear = 5785;
+  const persianYears = Array.from({ length: 7 }, (_, i) => currentPersianYear - 3 + i);
+  const hebrewYears = Array.from({ length: 7 }, (_, i) => currentHebrewYear - 3 + i);
 
   // Generate day options
   const days = Array.from({ length: 31 }, (_, i) => i + 1);
 
   useEffect(() => {
     // Set default values
-    setPrevDate({ year: currentYear.toString(), month: '3', day: '17' });
-    setLastDate({ year: currentYear.toString(), month: '4', day: '15' });
+    setPrevDate({ year: currentPersianYear.toString(), month: '3', day: '17' });
+    setLastDate({ year: currentPersianYear.toString(), month: '4', day: '15' });
   }, []);
 
   const validateInputs = (): boolean => {
@@ -109,36 +111,55 @@ const PersianCalculator: React.FC = () => {
       // Simulate calculation delay
       await new Promise(resolve => setTimeout(resolve, 1000));
 
-      // Mock calculation logic
-      const dayDiff = parseInt(lastDate.day) - parseInt(prevDate.day) + 30;
+      // Calculation based on last menstrual date
+      const lastDay = parseInt(lastDate.day);
+      const lastMonth = parseInt(lastDate.month);
+      const lastYear = parseInt(lastDate.year);
+      
+      const prevDay = parseInt(prevDate.day);
+      const prevMonth = parseInt(prevDate.month);
+      
+      // Calculate interval between periods
+      const interval = Math.abs(lastDay - prevDay) + Math.abs((lastMonth - prevMonth) * 30) || 28;
       
       // Result 1: 30 days after last period
-      const result1Day = (parseInt(lastDate.day) + 30) % 30 || 30;
-      const result1Month = parseInt(lastDate.month) + (parseInt(lastDate.day) + 30 > 30 ? 1 : 0);
+      const result1Day = lastDay + 30 > 30 ? (lastDay + 30) % 30 : lastDay + 30;
+      const result1Month = lastDay + 30 > 30 ? lastMonth + Math.floor((lastDay + 30) / 30) : lastMonth;
       
-      // Result 2: Last period + interval between periods
-      const interval = Math.abs(parseInt(lastDate.day) - parseInt(prevDate.day)) || 28;
-      const result2Day = (parseInt(lastDate.day) + interval) % 30 || 30;
-      const result2Month = parseInt(lastDate.month) + (parseInt(lastDate.day) + interval > 30 ? 1 : 0);
+      // Result 2: Last period + interval between periods  
+      const result2Day = lastDay + interval > 30 ? (lastDay + interval) % 30 : lastDay + interval;
+      const result2Month = lastDay + interval > 30 ? lastMonth + Math.floor((lastDay + interval) / 30) : lastMonth;
       
-      // Result 3: Same day next Hebrew month
-      const result3Day = parseInt(lastDate.day);
-      const result3Month = parseInt(lastDate.month) + 1;
+      // Result 3: Same day next Hebrew month (based on current date)
+      const result3Day = lastDay;
+      const result3Month = activeTab === 'hebrew' ? lastMonth + 1 : lastMonth + 1;
 
       const mockResults: CalculationResult[] = [
         {
-          persian: formatPersianDate(lastDate.year, result1Month.toString(), result1Day.toString()),
-          hebrew: formatHebrewDate('5785', '10', result1Day.toString()),
+          persian: activeTab === 'persian' 
+            ? formatPersianDate(lastYear.toString(), Math.min(result1Month, 12).toString(), result1Day.toString())
+            : formatPersianDate(currentPersianYear.toString(), '5', result1Day.toString()),
+          hebrew: activeTab === 'hebrew'
+            ? formatHebrewDate(lastYear.toString(), Math.min(result1Month, 13).toString(), result1Day.toString()) 
+            : formatHebrewDate(currentHebrewYear.toString(), '10', result1Day.toString()),
           weekday: 'پنجشنبه'
         },
         {
-          persian: formatPersianDate(lastDate.year, result2Month.toString(), result2Day.toString()),
-          hebrew: formatHebrewDate('5785', '11', result2Day.toString()),
+          persian: activeTab === 'persian'
+            ? formatPersianDate(lastYear.toString(), Math.min(result2Month, 12).toString(), result2Day.toString())
+            : formatPersianDate(currentPersianYear.toString(), '6', result2Day.toString()),
+          hebrew: activeTab === 'hebrew'
+            ? formatHebrewDate(lastYear.toString(), Math.min(result2Month, 13).toString(), result2Day.toString())
+            : formatHebrewDate(currentHebrewYear.toString(), '11', result2Day.toString()),
           weekday: 'جمعه'
         },
         {
-          persian: formatPersianDate(lastDate.year, result3Month.toString(), result3Day.toString()),
-          hebrew: formatHebrewDate('5785', '11', result3Day.toString()),
+          persian: activeTab === 'persian'
+            ? formatPersianDate(lastYear.toString(), Math.min(result3Month, 12).toString(), result3Day.toString())
+            : formatPersianDate(currentPersianYear.toString(), '7', result3Day.toString()),
+          hebrew: activeTab === 'hebrew'
+            ? formatHebrewDate(lastYear.toString(), Math.min(result3Month, 13).toString(), result3Day.toString())
+            : formatHebrewDate(currentHebrewYear.toString(), '11', result3Day.toString()),
           weekday: 'شنبه'
         }
       ];
@@ -158,7 +179,8 @@ const PersianCalculator: React.FC = () => {
     value: DateInput;
     onChange: (value: DateInput) => void;
     months: { value: string; name: string }[];
-  }> = ({ title, icon, value, onChange, months }) => (
+    years: number[];
+  }> = ({ title, icon, value, onChange, months, years }) => (
     <Card className="shadow-card hover:shadow-lg transition-all duration-300 border-2 hover:border-primary/20">
       <CardHeader className="pb-4">
         <CardTitle className="flex items-center gap-3 text-lg text-primary">
@@ -214,8 +236,8 @@ const PersianCalculator: React.FC = () => {
               <span className="text-sm text-muted-foreground">معادل: </span>
               <span className="font-bold text-primary">
                 {activeTab === 'persian' 
-                  ? formatHebrewDate('5785', (parseInt(value.month) + 6).toString(), value.day)
-                  : formatPersianDate('1403', (parseInt(value.month) - 6).toString(), value.day)
+                  ? `${value.day} سیوان ${currentHebrewYear}` // Simplified Hebrew equivalent
+                  : `${value.day} خرداد ${currentPersianYear}` // Simplified Persian equivalent
                 }
               </span>
             </div>
@@ -298,6 +320,7 @@ const PersianCalculator: React.FC = () => {
                     value={prevDate}
                     onChange={setPrevDate}
                     months={persianMonths}
+                    years={persianYears}
                   />
                   <DateSelector
                     title="تاریخ قاعدگی ماه جاری (شمسی)"
@@ -305,6 +328,7 @@ const PersianCalculator: React.FC = () => {
                     value={lastDate}
                     onChange={setLastDate}
                     months={persianMonths}
+                    years={persianYears}
                   />
                 </div>
               </TabsContent>
@@ -317,6 +341,7 @@ const PersianCalculator: React.FC = () => {
                     value={prevDate}
                     onChange={setPrevDate}
                     months={hebrewMonths}
+                    years={hebrewYears}
                   />
                   <DateSelector
                     title="تاریخ قاعدگی ماه جاری (عبری)"
@@ -324,6 +349,7 @@ const PersianCalculator: React.FC = () => {
                     value={lastDate}
                     onChange={setLastDate}
                     months={hebrewMonths}
+                    years={hebrewYears}
                   />
                 </div>
               </TabsContent>
@@ -410,6 +436,22 @@ const PersianCalculator: React.FC = () => {
           <div className="mt-4 text-sm opacity-75">
             محاسبات تقویم عبری با استفاده از الگوریتم‌های پیشرفته انجام می‌شود
           </div>
+          
+          {/* Add to Home Screen Button */}
+          <Button 
+            variant="secondary" 
+            size="lg" 
+            className="mt-6 bg-white/20 hover:bg-white/30 text-white border-white/30"
+            onClick={() => {
+              if ('serviceWorker' in navigator) {
+                // Create shortcut functionality
+                alert('برای ایجاد میانبر، از منوی مرورگر گزینه "افزودن به صفحه اصلی" را انتخاب کنید');
+              }
+            }}
+          >
+            <Star className="w-5 h-5 ml-2" />
+            ایجاد میانبر در صفحه اصلی
+          </Button>
         </div>
       </div>
     </div>
