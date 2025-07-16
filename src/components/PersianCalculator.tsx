@@ -193,40 +193,104 @@ const PersianCalculator: React.FC = () => {
       // Simulate calculation delay
       await new Promise(resolve => setTimeout(resolve, 1000));
 
-      // Calculation based on last menstrual date
+      // Parse input dates
       const lastDay = parseInt(lastDate.day);
       const lastMonth = parseInt(lastDate.month);
       const lastYear = parseInt(lastDate.year);
       const prevDay = parseInt(prevDate.day);
       const prevMonth = parseInt(prevDate.month);
+      const prevYear = parseInt(prevDate.year);
 
-      // Calculate interval between periods
-      const interval = Math.abs(lastDay - prevDay) + Math.abs((lastMonth - prevMonth) * 30) || 28;
+      let result1Persian, result1Hebrew, result2Persian, result2Hebrew, result3Persian, result3Hebrew;
+      let result1Day, result1Month, result1Year;
+      let result2Day, result2Month, result2Year;
+      let result3Day, result3Month, result3Year;
 
-      // Result 1: 30 days after last period
-      const result1Day = lastDay + 30 > 30 ? (lastDay + 30) % 30 : lastDay + 30;
-      const result1Month = lastDay + 30 > 30 ? lastMonth + Math.floor((lastDay + 30) / 30) : lastMonth;
+      if (activeTab === 'persian') {
+        // Convert Persian dates to Gregorian for calculation
+        const lastGregorian = jalaali.toGregorian(lastYear, lastMonth, lastDay);
+        const prevGregorian = jalaali.toGregorian(prevYear, prevMonth, prevDay);
+        
+        const lastDate_gr = new Date(lastGregorian.gy, lastGregorian.gm - 1, lastGregorian.gd);
+        const prevDate_gr = new Date(prevGregorian.gy, prevGregorian.gm - 1, prevGregorian.gd);
+        
+        // Calculate interval between periods in days
+        const intervalDays = Math.floor((lastDate_gr.getTime() - prevDate_gr.getTime()) / (1000 * 60 * 60 * 24));
+        const cycleLength = intervalDays > 0 ? intervalDays : 28; // Default to 28 days if calculation fails
 
-      // Result 2: Last period + interval between periods  
-      const result2Day = lastDay + interval > 30 ? (lastDay + interval) % 30 : lastDay + interval;
-      const result2Month = lastDay + interval > 30 ? lastMonth + Math.floor((lastDay + interval) / 30) : lastMonth;
+        // Result 1: 30 days after last period
+        const result1Date_gr = new Date(lastDate_gr);
+        result1Date_gr.setDate(result1Date_gr.getDate() + 30);
+        const result1_jalaali = jalaali.toJalaali(result1Date_gr.getFullYear(), result1Date_gr.getMonth() + 1, result1Date_gr.getDate());
+        result1Day = result1_jalaali.jd;
+        result1Month = result1_jalaali.jm;
+        result1Year = result1_jalaali.jy;
+        result1Persian = formatPersianDate(result1Year.toString(), result1Month.toString(), result1Day.toString());
+        result1Hebrew = persianToHebrew(result1Year.toString(), result1Month.toString(), result1Day.toString());
 
-      // Result 3: Same day next Hebrew month (based on current date)
-      const result3Day = lastDay;
-      const result3Month = activeTab === 'hebrew' ? lastMonth + 1 : lastMonth + 1;
+        // Result 2: Last period + cycle length
+        const result2Date_gr = new Date(lastDate_gr);
+        result2Date_gr.setDate(result2Date_gr.getDate() + cycleLength);
+        const result2_jalaali = jalaali.toJalaali(result2Date_gr.getFullYear(), result2Date_gr.getMonth() + 1, result2Date_gr.getDate());
+        result2Day = result2_jalaali.jd;
+        result2Month = result2_jalaali.jm;
+        result2Year = result2_jalaali.jy;
+        result2Persian = formatPersianDate(result2Year.toString(), result2Month.toString(), result2Day.toString());
+        result2Hebrew = persianToHebrew(result2Year.toString(), result2Month.toString(), result2Day.toString());
+
+        // Result 3: Same day next month
+        result3Day = lastDay;
+        result3Month = lastMonth + 1;
+        result3Year = lastYear;
+        if (result3Month > 12) {
+          result3Month = 1;
+          result3Year += 1;
+        }
+        result3Persian = formatPersianDate(result3Year.toString(), result3Month.toString(), result3Day.toString());
+        result3Hebrew = persianToHebrew(result3Year.toString(), result3Month.toString(), result3Day.toString());
+
+      } else {
+        // Hebrew calendar calculations
+        result1Day = lastDay;
+        result1Month = lastMonth + 1;
+        result1Year = lastYear;
+        if (result1Month > 13) {
+          result1Month = 1;
+          result1Year += 1;
+        }
+        result1Hebrew = formatHebrewDate(result1Year.toString(), result1Month.toString(), result1Day.toString());
+        result1Persian = hebrewToPersian(result1Year.toString(), result1Month.toString(), result1Day.toString());
+
+        // Result 2: Based on cycle (simplified for Hebrew)
+        result2Day = lastDay;
+        result2Month = lastMonth + 2;
+        result2Year = lastYear;
+        if (result2Month > 13) {
+          result2Month = result2Month - 13;
+          result2Year += 1;
+        }
+        result2Hebrew = formatHebrewDate(result2Year.toString(), result2Month.toString(), result2Day.toString());
+        result2Persian = hebrewToPersian(result2Year.toString(), result2Month.toString(), result2Day.toString());
+
+        // Result 3: Same as result 1 for Hebrew
+        result3Hebrew = result1Hebrew;
+        result3Persian = result1Persian;
+      }
+
       const mockResults: CalculationResult[] = [{
-        persian: activeTab === 'persian' ? formatPersianDate(lastYear.toString(), Math.min(result1Month, 12).toString(), result1Day.toString()) : formatPersianDate(currentPersianYear.toString(), '5', result1Day.toString()),
-        hebrew: activeTab === 'hebrew' ? formatHebrewDate(lastYear.toString(), Math.min(result1Month, 13).toString(), result1Day.toString()) : formatHebrewDate(currentHebrewYear.toString(), '10', result1Day.toString()),
+        persian: result1Persian,
+        hebrew: result1Hebrew,
         weekday: 'پنجشنبه'
       }, {
-        persian: activeTab === 'persian' ? formatPersianDate(lastYear.toString(), Math.min(result2Month, 12).toString(), result2Day.toString()) : formatPersianDate(currentPersianYear.toString(), '6', result2Day.toString()),
-        hebrew: activeTab === 'hebrew' ? formatHebrewDate(lastYear.toString(), Math.min(result2Month, 13).toString(), result2Day.toString()) : formatHebrewDate(currentHebrewYear.toString(), '11', result2Day.toString()),
+        persian: result2Persian,
+        hebrew: result2Hebrew,
         weekday: 'جمعه'
       }, {
-        persian: activeTab === 'persian' ? formatPersianDate(lastYear.toString(), Math.min(result3Month, 12).toString(), result3Day.toString()) : formatPersianDate(currentPersianYear.toString(), '7', result3Day.toString()),
-        hebrew: activeTab === 'hebrew' ? formatHebrewDate(lastYear.toString(), Math.min(result3Month, 13).toString(), result3Day.toString()) : formatHebrewDate(currentHebrewYear.toString(), '11', result3Day.toString()),
+        persian: result3Persian,
+        hebrew: result3Hebrew,
         weekday: 'شنبه'
       }];
+
       setResults(mockResults);
       setSuccess(true);
     } catch (err) {
