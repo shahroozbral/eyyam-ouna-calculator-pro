@@ -118,7 +118,7 @@ const PersianCalculator: React.FC = () => {
   }];
 
   // Generate year options
-  const currentPersianYear = 1403;
+  const currentPersianYear = 1404;
   const currentHebrewYear = 5785;
   const persianYears = Array.from({
     length: 7
@@ -150,20 +150,20 @@ const PersianCalculator: React.FC = () => {
     if (activeTab === 'hebrew') {
       setPrevDate(prev => ({
         ...prev,
-        year: prev.year || currentHebrewYear.toString()
+        year: currentHebrewYear.toString()
       }));
       setLastDate(prev => ({
         ...prev,
-        year: prev.year || currentHebrewYear.toString()
+        year: currentHebrewYear.toString()
       }));
     } else {
       setPrevDate(prev => ({
         ...prev,
-        year: prev.year || currentPersianYear.toString()
+        year: currentPersianYear.toString()
       }));
       setLastDate(prev => ({
         ...prev,
-        year: prev.year || currentPersianYear.toString()
+        year: currentPersianYear.toString()
       }));
     }
   }, [activeTab]);
@@ -238,16 +238,34 @@ const PersianCalculator: React.FC = () => {
         result2Persian = formatPersianDate(result2Year.toString(), result2Month.toString(), result2Day.toString());
         result2Hebrew = persianToHebrew(result2Year.toString(), result2Month.toString(), result2Day.toString());
 
-        // Result 3: Same day next month
-        result3Day = lastDay;
-        result3Month = lastMonth + 1;
-        result3Year = lastYear;
-        if (result3Month > 12) {
-          result3Month = 1;
-          result3Year += 1;
+        // Result 3: Same day next month in Hebrew calendar
+        const result3Date_gr = new Date(lastDate_gr);
+        result3Date_gr.setDate(result3Date_gr.getDate() + 30);
+        
+        // Convert to Hebrew date and add one month
+        const hebrewFormatter = new Intl.DateTimeFormat('he-u-ca-hebrew', {
+          year: 'numeric',
+          month: 'numeric', 
+          day: 'numeric',
+          numberingSystem: 'latn'
+        });
+        
+        const hebrewDateParts = hebrewFormatter.format(result3Date_gr).split('/');
+        let hebrewMonth = parseInt(hebrewDateParts[1]) + 1;
+        let hebrewYear = parseInt(hebrewDateParts[2]);
+        let hebrewDay = parseInt(hebrewDateParts[0]);
+        
+        if (hebrewMonth > 13) {
+          hebrewMonth = 1;
+          hebrewYear += 1;
         }
-        result3Persian = formatPersianDate(result3Year.toString(), result3Month.toString(), result3Day.toString());
-        result3Hebrew = persianToHebrew(result3Year.toString(), result3Month.toString(), result3Day.toString());
+        
+        result3Day = hebrewDay;
+        result3Month = hebrewMonth;
+        result3Year = hebrewYear;
+        
+        result3Hebrew = formatHebrewDate(hebrewYear.toString(), hebrewMonth.toString(), hebrewDay.toString());
+        result3Persian = hebrewToPersian(hebrewYear.toString(), hebrewMonth.toString(), hebrewDay.toString());
 
       } else {
         // Hebrew calendar calculations
@@ -277,18 +295,52 @@ const PersianCalculator: React.FC = () => {
         result3Persian = result1Persian;
       }
 
+      // Calculate weekdays for Persian calendar
+      const weekdayNames = ['یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنجشنبه', 'جمعه', 'شنبه'];
+      
+      let weekday1, weekday2, weekday3;
+      
+      if (activeTab === 'persian') {
+        // Convert Persian dates to Gregorian for calculation
+        const lastGregorian = jalaali.toGregorian(lastYear, lastMonth, lastDay);
+        const prevGregorian = jalaali.toGregorian(prevYear, prevMonth, prevDay);
+        
+        const lastDate_gr = new Date(lastGregorian.gy, lastGregorian.gm - 1, lastGregorian.gd);
+        const prevDate_gr = new Date(prevGregorian.gy, prevGregorian.gm - 1, prevGregorian.gd);
+        
+        // Calculate interval between periods in days
+        const intervalDays = Math.floor((lastDate_gr.getTime() - prevDate_gr.getTime()) / (1000 * 60 * 60 * 24));
+        const cycleLength = intervalDays > 0 ? intervalDays : 28;
+        
+        const result1Date_gr = new Date(lastDate_gr);
+        result1Date_gr.setDate(result1Date_gr.getDate() + 30);
+        weekday1 = weekdayNames[result1Date_gr.getDay()];
+        
+        const result2Date_gr = new Date(lastDate_gr);
+        result2Date_gr.setDate(result2Date_gr.getDate() + cycleLength);
+        weekday2 = weekdayNames[result2Date_gr.getDay()];
+        
+        const result3Date_gr = new Date(result1Date_gr);
+        result3Date_gr.setMonth(result3Date_gr.getMonth() + 1);
+        weekday3 = weekdayNames[result3Date_gr.getDay()];
+      } else {
+        weekday1 = 'پنجشنبه';
+        weekday2 = 'جمعه';
+        weekday3 = 'شنبه';
+      }
+
       const mockResults: CalculationResult[] = [{
         persian: result1Persian,
         hebrew: result1Hebrew,
-        weekday: 'پنجشنبه'
+        weekday: weekday1
       }, {
         persian: result2Persian,
         hebrew: result2Hebrew,
-        weekday: 'جمعه'
+        weekday: weekday2
       }, {
         persian: result3Persian,
         hebrew: result3Hebrew,
-        weekday: 'شنبه'
+        weekday: weekday3
       }];
 
       setResults(mockResults);
@@ -516,13 +568,13 @@ const PersianCalculator: React.FC = () => {
             </p>
             <div className="grid md:grid-cols-3 gap-4">
               <div className="bg-white p-4 rounded-lg border border-primary/10">
-                <div className="font-bold text-primary mb-2">1. 30 روز پس از قاعدگی آخر</div>
+                <div className="font-bold text-primary mb-2">30 روز پس از قاعدگی ماه جاری</div>
               </div>
               <div className="bg-white p-4 rounded-lg border border-primary/10">
-                <div className="font-bold text-primary mb-2">2. تاریخ قاعدگی آخر + فاصله دو قاعدگی</div>
+                <div className="font-bold text-primary mb-2">قاعدگی جاری + اختلاف دو قاعدگی اخیر</div>
               </div>
               <div className="bg-white p-4 rounded-lg border border-primary/10">
-                <div className="font-bold text-primary mb-2">3. همان روز در ماه بعد عبری</div>
+                <div className="font-bold text-primary mb-2">همان روز در ماه بعد عبری</div>
               </div>
             </div>
             
@@ -595,10 +647,10 @@ const PersianCalculator: React.FC = () => {
               <div className="grid lg:grid-cols-3 gap-6">
                 {results.map((result, index) => <Card key={index} className="bg-gradient-subtle border-2 border-primary/10 hover:border-primary/30 transition-all duration-300 hover:shadow-lg">
                     <CardHeader>
-                      <CardTitle className="text-lg text-center text-primary">
-                        {index === 0 && '1. 30 روز پس از قاعدگی آخر'}
-                        {index === 1 && '2. قاعدگی آخر + فاصله دو قاعدگی'}
-                        {index === 2 && '3. همان روز در ماه بعد عبری'}
+                       <CardTitle className="text-lg text-center text-primary">
+                        {index === 0 && '30 روز پس از قاعدگی ماه جاری'}
+                        {index === 1 && 'قاعدگی جاری + اختلاف دو قاعدگی اخیر'}
+                        {index === 2 && 'همان روز در ماه بعد عبری'}
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
