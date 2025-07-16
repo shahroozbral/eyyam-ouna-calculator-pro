@@ -75,46 +75,46 @@ const PersianCalculator: React.FC = () => {
     name: 'اسفند'
   }];
 
-  // Hebrew month names
+  // Hebrew month names (starting with Nissan as month 1)
   const hebrewMonths = [{
     value: '1',
-    name: 'تیشری'
-  }, {
-    value: '2',
-    name: 'حشوان'
-  }, {
-    value: '3',
-    name: 'کیسلو'
-  }, {
-    value: '4',
-    name: 'طوت'
-  }, {
-    value: '5',
-    name: 'شواط'
-  }, {
-    value: '6',
-    name: 'آدار'
-  }, {
-    value: '7',
-    name: 'آدار دوم'
-  }, {
-    value: '8',
     name: 'نیسان'
   }, {
-    value: '9',
+    value: '2',
     name: 'ایار'
   }, {
-    value: '10',
+    value: '3',
     name: 'سیوان'
   }, {
-    value: '11',
+    value: '4',
     name: 'تموز'
   }, {
-    value: '12',
+    value: '5',
     name: 'آو'
   }, {
-    value: '13',
+    value: '6',
     name: 'الول'
+  }, {
+    value: '7',
+    name: 'تیشری'
+  }, {
+    value: '8',
+    name: 'حشوان'
+  }, {
+    value: '9',
+    name: 'کیسلو'
+  }, {
+    value: '10',
+    name: 'طوت'
+  }, {
+    value: '11',
+    name: 'شواط'
+  }, {
+    value: '12',
+    name: 'آدار'
+  }, {
+    value: '13',
+    name: 'آدار دوم'
   }];
 
   // Generate year options
@@ -238,11 +238,7 @@ const PersianCalculator: React.FC = () => {
         result2Persian = formatPersianDate(result2Year.toString(), result2Month.toString(), result2Day.toString());
         result2Hebrew = persianToHebrew(result2Year.toString(), result2Month.toString(), result2Day.toString());
 
-        // Result 3: Same day next month in Hebrew calendar
-        const result3Date_gr = new Date(lastDate_gr);
-        result3Date_gr.setDate(result3Date_gr.getDate() + 30);
-        
-        // Convert to Hebrew date and add one month
+        // Result 3: Same day next month in Hebrew calendar - convert last date to Hebrew first
         const hebrewFormatter = new Intl.DateTimeFormat('he-u-ca-hebrew', {
           year: 'numeric',
           month: 'numeric', 
@@ -250,8 +246,8 @@ const PersianCalculator: React.FC = () => {
           numberingSystem: 'latn'
         });
         
-        const hebrewDateParts = hebrewFormatter.format(result3Date_gr).split('/');
-        let hebrewMonth = parseInt(hebrewDateParts[1]) + 1;
+        const hebrewDateParts = hebrewFormatter.format(lastDate_gr).split('/');
+        let hebrewMonth = parseInt(hebrewDateParts[1]) + 1; // Next month
         let hebrewYear = parseInt(hebrewDateParts[2]);
         let hebrewDay = parseInt(hebrewDateParts[0]);
         
@@ -268,31 +264,41 @@ const PersianCalculator: React.FC = () => {
         result3Persian = hebrewToPersian(hebrewYear.toString(), hebrewMonth.toString(), hebrewDay.toString());
 
       } else {
-        // Hebrew calendar calculations
-        result1Day = lastDay;
-        result1Month = lastMonth + 1;
-        result1Year = lastYear;
-        if (result1Month > 13) {
-          result1Month = 1;
-          result1Year += 1;
-        }
-        result1Hebrew = formatHebrewDate(result1Year.toString(), result1Month.toString(), result1Day.toString());
-        result1Persian = hebrewToPersian(result1Year.toString(), result1Month.toString(), result1Day.toString());
+        // Hebrew calendar calculations - convert to Gregorian for proper calculations
+        const prevDateMs = hebrewToGregorian(prevYear, prevMonth, prevDay);
+        const lastDateMs = hebrewToGregorian(lastYear, lastMonth, lastDay);
+        
+        const prevDate_gr = new Date(prevDateMs);
+        const lastDate_gr = new Date(lastDateMs);
+        
+        // Calculate interval between periods in days
+        const intervalDays = Math.floor((lastDate_gr.getTime() - prevDate_gr.getTime()) / (1000 * 60 * 60 * 24));
+        const cycleLength = intervalDays > 0 ? intervalDays : 28;
 
-        // Result 2: Based on cycle (simplified for Hebrew)
-        result2Day = lastDay;
-        result2Month = lastMonth + 2;
-        result2Year = lastYear;
-        if (result2Month > 13) {
-          result2Month = result2Month - 13;
-          result2Year += 1;
-        }
-        result2Hebrew = formatHebrewDate(result2Year.toString(), result2Month.toString(), result2Day.toString());
-        result2Persian = hebrewToPersian(result2Year.toString(), result2Month.toString(), result2Day.toString());
+        // Result 1: 30 days after last period
+        const result1Date_gr = new Date(lastDate_gr);
+        result1Date_gr.setDate(result1Date_gr.getDate() + 30);
+        const result1Hebrew_date = gregorianToHebrew(result1Date_gr);
+        result1Hebrew = result1Hebrew_date;
+        result1Persian = hebrewToPersian(result1Hebrew_date.split(' ')[2], getHebrewMonthNumber(result1Hebrew_date.split(' ')[1]).toString(), result1Hebrew_date.split(' ')[0]);
 
-        // Result 3: Same as result 1 for Hebrew
-        result3Hebrew = result1Hebrew;
-        result3Persian = result1Persian;
+        // Result 2: Last period + cycle length
+        const result2Date_gr = new Date(lastDate_gr);
+        result2Date_gr.setDate(result2Date_gr.getDate() + cycleLength);
+        const result2Hebrew_date = gregorianToHebrew(result2Date_gr);
+        result2Hebrew = result2Hebrew_date;
+        result2Persian = hebrewToPersian(result2Hebrew_date.split(' ')[2], getHebrewMonthNumber(result2Hebrew_date.split(' ')[1]).toString(), result2Hebrew_date.split(' ')[0]);
+
+        // Result 3: Same day next month in Hebrew
+        result3Day = lastDay;
+        result3Month = lastMonth + 1;
+        result3Year = lastYear;
+        if (result3Month > 13) {
+          result3Month = 1;
+          result3Year += 1;
+        }
+        result3Hebrew = formatHebrewDate(result3Year.toString(), result3Month.toString(), result3Day.toString());
+        result3Persian = hebrewToPersian(result3Year.toString(), result3Month.toString(), result3Day.toString());
       }
 
       // Calculate weekdays for Persian calendar
@@ -409,6 +415,81 @@ const PersianCalculator: React.FC = () => {
     }
   };
 
+  // Helper function to convert Hebrew to Gregorian milliseconds
+  const hebrewToGregorian = (year: number, month: number, day: number): number => {
+    // This is a simplified approximation - using current mapping
+    const baseGregorianYear = 2024;
+    const baseHebrewYear = 5785;
+    const yearDiff = year - baseHebrewYear;
+    const gregorianYear = baseGregorianYear + yearDiff;
+    
+    // Hebrew months starting with Nissan (month 1)
+    // Nissan = April, Iyar = May, Sivan = June, Tammuz = July, Av = August, Elul = September
+    // Tishrei = October, Cheshvan = November, Kislev = December, Tevet = January, Shevat = February, Adar = March
+    const monthMapping = [4, 5, 6, 7, 8, 9, 10, 11, 12, 1, 2, 3, 3]; // last one is Adar II
+    let gregorianMonth = monthMapping[month - 1];
+    let adjustedYear = gregorianYear;
+    
+    if (gregorianMonth <= 3) {
+      adjustedYear += 1;
+    }
+    
+    return new Date(adjustedYear, gregorianMonth - 1, day).getTime();
+  };
+
+  // Helper function to convert Gregorian to Hebrew date string
+  const gregorianToHebrew = (gregorianDate: Date): string => {
+    const hebrewFormatter = new Intl.DateTimeFormat('he-u-ca-hebrew', {
+      year: 'numeric',
+      month: 'long', 
+      day: 'numeric',
+      numberingSystem: 'latn'
+    });
+    
+    let hebrewDate = hebrewFormatter.format(gregorianDate);
+    
+    // Remove Hebrew prefixes and clean up the string
+    hebrewDate = hebrewDate.replace(/ב'/g, '').replace(/ב/g, '').replace(/'/g, '');
+    
+    // Convert Hebrew month names to Persian/Farsi equivalents
+    const monthMap: { [key: string]: string } = {
+      'תשרי': 'تیشری',
+      'חשון': 'حشوان', 
+      'חשוון': 'حشوان',
+      'כסלו': 'کیسلو',
+      'טבת': 'طوت',
+      'שבט': 'شواط',
+      'אדר': 'آدار',
+      'אדר א׳': 'آدار اول',
+      'אדר ב׳': 'آدار دوم',
+      'אדר א': 'آدار اول',
+      'אדר ב': 'آدار دوم', 
+      'ניסן': 'نیسان',
+      'אייר': 'ایار',
+      'סיון': 'سیوان',
+      'סיוון': 'سیوان',
+      'תמוז': 'تموز',
+      'אב': 'آو',
+      'אלול': 'الول'
+    };
+    
+    let convertedDate = hebrewDate;
+    for (const [hebrew, persian] of Object.entries(monthMap)) {
+      convertedDate = convertedDate.replace(new RegExp(hebrew, 'g'), persian);
+    }
+    
+    return convertedDate;
+  };
+
+  // Helper function to get Hebrew month number from name
+  const getHebrewMonthNumber = (monthName: string): number => {
+    const monthMap: { [key: string]: number } = {
+      'نیسان': 1, 'ایار': 2, 'سیوان': 3, 'تموز': 4, 'آو': 5, 'الول': 6,
+      'تیشری': 7, 'حشوان': 8, 'کیسلو': 9, 'طوت': 10, 'شواط': 11, 'آدار': 12, 'آدار دوم': 13
+    };
+    return monthMap[monthName] || 1;
+  };
+
   // Convert Hebrew date to Persian date  
   const hebrewToPersian = (year: string, month: string, day: string): string => {
     try {
@@ -416,32 +497,8 @@ const PersianCalculator: React.FC = () => {
       const hebrewMonth = parseInt(month);
       const hebrewDay = parseInt(day);
       
-      // Hebrew month names for conversion
-      const monthNames = [
-        'תשרי', 'חשון', 'כסלו', 'טבת', 'שבט', 
-        'אדר', 'אדר ב', 'ניסן', 'אייר', 'סיון', 
-        'תמוז', 'אב', 'אלול'
-      ];
-      
-      // Create Hebrew date and convert to Gregorian
-      const hebrewDateStr = `${hebrewDay} ${monthNames[hebrewMonth - 1]} ${hebrewYear}`;
-      const hebrewDateObj = new Date();
-      
-      // This is a simplified conversion - in production you'd want a proper Hebrew calendar library
-      const baseGregorianYear = 2024;
-      const baseHebrewYear = 5785;
-      const yearDiff = hebrewYear - baseHebrewYear;
-      const gregorianYear = baseGregorianYear + yearDiff;
-      
-      // Approximate month mapping (Hebrew year starts in fall)
-      let gregorianMonth = hebrewMonth + 6;
-      let adjustedYear = gregorianYear;
-      if (gregorianMonth > 12) {
-        gregorianMonth -= 12;
-        adjustedYear += 1;
-      }
-      
-      const gregorianDate = new Date(adjustedYear, gregorianMonth - 1, hebrewDay);
+      const gregorianMs = hebrewToGregorian(hebrewYear, hebrewMonth, hebrewDay);
+      const gregorianDate = new Date(gregorianMs);
       
       // Convert Gregorian to Persian
       const jd = jalaali.toJalaali(gregorianDate.getFullYear(), gregorianDate.getMonth() + 1, gregorianDate.getDate());
