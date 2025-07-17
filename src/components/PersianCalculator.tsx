@@ -300,10 +300,27 @@ const PersianCalculator: React.FC = () => {
         result3Day = lastDay;
         result3Month = lastMonth + 1;
         result3Year = lastYear;
-        if (result3Month > 13) {
-          result3Month = 1;
-          result3Year += 1;
+        
+        // Handle month overflow properly for Hebrew calendar
+        if (result3Month > 12) {
+          // Check for leap year (Adar II exists)
+          const isLeapYear = (result3Year % 19 === 0) || 
+                           (result3Year % 19 === 3) || 
+                           (result3Year % 19 === 6) || 
+                           (result3Year % 19 === 8) || 
+                           (result3Year % 19 === 11) || 
+                           (result3Year % 19 === 14) || 
+                           (result3Year % 19 === 17);
+          
+          if (result3Month === 13 && !isLeapYear) {
+            result3Month = 1;
+            result3Year += 1;
+          } else if (result3Month > 13) {
+            result3Month = 1;
+            result3Year += 1;
+          }
         }
+        
         result3Hebrew = formatHebrewDate(result3Year.toString(), result3Month.toString(), result3Day.toString());
         result3Persian = hebrewToPersian(result3Year.toString(), result3Month.toString(), result3Day.toString());
       }
@@ -320,13 +337,17 @@ const PersianCalculator: React.FC = () => {
         weekday1 = weekdayNames[result1Date_gr.getDay()];
         
         const result2_jalaali_gr = jalaali.toGregorian(result2Year, result2Month, result2Day);
-        const result2Date_gr = new Date(result2_jalaali_gr.gy, result2_jalaali_gr.gm - 1, result2_jalaali_gr.jd);
+        const result2Date_gr = new Date(result2_jalaali_gr.gy, result2_jalaali_gr.gm - 1, result2_jalaali_gr.gd);
         weekday2 = weekdayNames[result2Date_gr.getDay()];
         
         // For result 3, convert Hebrew date to Gregorian for weekday
         const result3Date_gr_ms = hebrewToGregorian(result3Year, result3Month, result3Day);
         const result3Date_gr = new Date(result3Date_gr_ms);
-        weekday3 = weekdayNames[result3Date_gr.getDay()];
+        if (!isNaN(result3Date_gr.getTime())) {
+          weekday3 = weekdayNames[result3Date_gr.getDay()];
+        } else {
+          weekday3 = '';
+        }
       } else {
         // For Hebrew calendar, calculate weekdays properly
         const result1Date_gr_ms = hebrewToGregorian(parseInt(result1Hebrew.split(' ')[2]), getHebrewMonthNumber(result1Hebrew.split(' ')[1]), parseInt(result1Hebrew.split(' ')[0]));
@@ -424,24 +445,33 @@ const PersianCalculator: React.FC = () => {
 
   // Helper function to convert Hebrew to Gregorian milliseconds
   const hebrewToGregorian = (year: number, month: number, day: number): number => {
-    // This is a simplified approximation - using current mapping
-    const baseGregorianYear = 2024;
-    const baseHebrewYear = 5785;
-    const yearDiff = year - baseHebrewYear;
-    const gregorianYear = baseGregorianYear + yearDiff;
-    
-    // Hebrew months starting with Nissan (month 1)
-    // Nissan = April, Iyar = May, Sivan = June, Tammuz = July, Av = August, Elul = September
-    // Tishrei = October, Cheshvan = November, Kislev = December, Tevet = January, Shevat = February, Adar = March
-    const monthMapping = [4, 5, 6, 7, 8, 9, 10, 11, 12, 1, 2, 3, 3]; // last one is Adar II
-    let gregorianMonth = monthMapping[month - 1];
-    let adjustedYear = gregorianYear;
-    
-    if (gregorianMonth <= 3) {
-      adjustedYear += 1;
+    try {
+      // Use a more accurate conversion based on current date reference
+      // 21 Tammuz 5785 = 26 Tir 1404 = July 26, 2025
+      const referencePersianYear = 1404;
+      const referencePersianMonth = 4; // Tir
+      const referencePersianDay = 26;
+      const referenceHebrewYear = 5785;
+      const referenceHebrewMonth = 4; // Tammuz
+      const referenceHebrewDay = 21;
+      
+      // Convert reference Persian date to Gregorian
+      const refGregorian = jalaali.toGregorian(referencePersianYear, referencePersianMonth, referencePersianDay);
+      const refDate = new Date(refGregorian.gy, refGregorian.gm - 1, refGregorian.gd);
+      
+      // Calculate days difference from reference Hebrew date
+      const refHebrewDays = referenceHebrewYear * 365 + referenceHebrewMonth * 30 + referenceHebrewDay;
+      const inputHebrewDays = year * 365 + month * 30 + day;
+      const daysDiff = inputHebrewDays - refHebrewDays;
+      
+      // Add difference to reference Gregorian date
+      const resultDate = new Date(refDate);
+      resultDate.setDate(resultDate.getDate() + daysDiff);
+      
+      return resultDate.getTime();
+    } catch (error) {
+      return NaN;
     }
-    
-    return new Date(adjustedYear, gregorianMonth - 1, day).getTime();
   };
 
   // Helper function to convert Gregorian to Hebrew date string
