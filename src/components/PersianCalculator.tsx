@@ -9,16 +9,19 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Calendar, Calculator, Star, Clock, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { addDays, format } from 'date-fns';
 import * as jalaali from 'jalaali-js';
+
 interface DateInput {
   year: string;
   month: string;
   day: string;
 }
+
 interface CalculationResult {
   persian: string;
   hebrew: string;
   weekday: string;
 }
+
 const PersianCalculator: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'persian' | 'hebrew'>('persian');
   const [prevDate, setPrevDate] = useState<DateInput>({
@@ -131,6 +134,7 @@ const PersianCalculator: React.FC = () => {
   const days = Array.from({
     length: 31
   }, (_, i) => i + 1);
+
   useEffect(() => {
     // Set default values for Persian calendar
     setPrevDate({
@@ -167,6 +171,7 @@ const PersianCalculator: React.FC = () => {
       }));
     }
   }, [activeTab]);
+
   const validateInputs = (): boolean => {
     if (!prevDate.year || !prevDate.month || !prevDate.day || !lastDate.year || !lastDate.month || !lastDate.day) {
       setError('لطفاً تمام فیلدها را پر کنید');
@@ -176,14 +181,17 @@ const PersianCalculator: React.FC = () => {
     // Basic date validation would go here
     return true;
   };
+
   const formatPersianDate = (year: string, month: string, day: string): string => {
     const monthName = persianMonths.find(m => m.value === month)?.name || month;
     return `${day} ${monthName} ${year}`;
   };
+
   const formatHebrewDate = (year: string, month: string, day: string): string => {
     const monthName = hebrewMonths.find(m => m.value === month)?.name || month;
     return `${day} ${monthName} ${year}`;
   };
+
   const calculate = async () => {
     setError('');
     setSuccess(false);
@@ -278,23 +286,21 @@ const PersianCalculator: React.FC = () => {
         const prevDate_gr = new Date(prevDateMs);
         const lastDate_gr = new Date(lastDateMs);
         
-        // Calculate interval between periods in days
+        // Calculate interval between periods in days (including start days)
         const intervalDays = Math.floor((lastDate_gr.getTime() - prevDate_gr.getTime()) / (1000 * 60 * 60 * 24));
         const cycleLength = intervalDays > 0 ? intervalDays : 28;
 
-        // Result 1: 30 days after last period
+        // Result 1: 30 days after last period (convert to Hebrew calendar)
         const result1Date_gr = new Date(lastDate_gr);
         result1Date_gr.setDate(result1Date_gr.getDate() + 30);
         const result1Hebrew_date = gregorianToHebrew(result1Date_gr);
         result1Hebrew = result1Hebrew_date;
         result1Persian = hebrewToPersian(result1Hebrew_date.split(' ')[2], getHebrewMonthNumber(result1Hebrew_date.split(' ')[1]).toString(), result1Hebrew_date.split(' ')[0]);
 
-        // Result 2: Last period + cycle length
-        const result2Date_gr = new Date(lastDate_gr);
-        result2Date_gr.setDate(result2Date_gr.getDate() + cycleLength);
-        const result2Hebrew_date = gregorianToHebrew(result2Date_gr);
-        result2Hebrew = result2Hebrew_date;
-        result2Persian = hebrewToPersian(result2Hebrew_date.split(' ')[2], getHebrewMonthNumber(result2Hebrew_date.split(' ')[1]).toString(), result2Hebrew_date.split(' ')[0]);
+        // Result 2: Last Hebrew period + calculated cycle length (directly in Hebrew calendar)
+        const result2Date_gr = addDaysToHebrewDate(lastYear, lastMonth, lastDay, cycleLength);
+        result2Hebrew = formatHebrewDate(result2Date_gr.year.toString(), result2Date_gr.month.toString(), result2Date_gr.day.toString());
+        result2Persian = hebrewToPersian(result2Date_gr.year.toString(), result2Date_gr.month.toString(), result2Date_gr.day.toString());
 
         // Result 3: Same day next month in Hebrew
         result3Day = lastDay;
@@ -384,6 +390,24 @@ const PersianCalculator: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Helper function to add days to Hebrew date
+  const addDaysToHebrewDate = (year: number, month: number, day: number, daysToAdd: number) => {
+    // Convert Hebrew date to Gregorian, add days, then convert back
+    const gregorianMs = hebrewToGregorian(year, month, day);
+    const gregorianDate = new Date(gregorianMs);
+    gregorianDate.setDate(gregorianDate.getDate() + daysToAdd);
+    
+    // Convert back to Hebrew
+    const hebrewDateStr = gregorianToHebrew(gregorianDate);
+    const parts = hebrewDateStr.split(' ');
+    
+    return {
+      day: parseInt(parts[0]),
+      month: getHebrewMonthNumber(parts[1]),
+      year: parseInt(parts[2])
+    };
   };
 
   // Convert Persian date to Hebrew date
@@ -643,6 +667,7 @@ const PersianCalculator: React.FC = () => {
           </div>}
       </CardContent>
     </Card>;
+
   return <div className="min-h-screen bg-gradient-subtle" dir="rtl">
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         {/* Header */}
@@ -800,4 +825,5 @@ const PersianCalculator: React.FC = () => {
       </div>
     </div>;
 };
+
 export default PersianCalculator;
