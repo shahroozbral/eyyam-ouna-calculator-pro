@@ -251,9 +251,16 @@ const PersianCalculator: React.FC = () => {
         let hebrewYear = parseInt(hebrewDateParts[2]);
         let hebrewDay = parseInt(hebrewDateParts[0]);
         
-        if (hebrewMonth > 13) {
-          hebrewMonth = 1;
-          hebrewYear += 1;
+        // Adjust for Hebrew calendar month overflow
+        if (hebrewMonth > 12) {
+          // Check if it's a leap year (simplified check)
+          if (hebrewMonth === 13 && hebrewYear % 19 !== 0) {
+            hebrewMonth = 1;
+            hebrewYear += 1;
+          } else if (hebrewMonth > 13) {
+            hebrewMonth = 1;
+            hebrewYear += 1;
+          }
         }
         
         result3Day = hebrewDay;
@@ -307,32 +314,32 @@ const PersianCalculator: React.FC = () => {
       let weekday1, weekday2, weekday3;
       
       if (activeTab === 'persian') {
-        // Convert Persian dates to Gregorian for calculation
-        const lastGregorian = jalaali.toGregorian(lastYear, lastMonth, lastDay);
-        const prevGregorian = jalaali.toGregorian(prevYear, prevMonth, prevDay);
-        
-        const lastDate_gr = new Date(lastGregorian.gy, lastGregorian.gm - 1, lastGregorian.gd);
-        const prevDate_gr = new Date(prevGregorian.gy, prevGregorian.gm - 1, prevGregorian.gd);
-        
-        // Calculate interval between periods in days
-        const intervalDays = Math.floor((lastDate_gr.getTime() - prevDate_gr.getTime()) / (1000 * 60 * 60 * 24));
-        const cycleLength = intervalDays > 0 ? intervalDays : 28;
-        
-        const result1Date_gr = new Date(lastDate_gr);
-        result1Date_gr.setDate(result1Date_gr.getDate() + 30);
+        // Convert Persian dates to Gregorian for weekday calculation
+        const result1_jalaali_gr = jalaali.toGregorian(result1Year, result1Month, result1Day);
+        const result1Date_gr = new Date(result1_jalaali_gr.gy, result1_jalaali_gr.gm - 1, result1_jalaali_gr.jd);
         weekday1 = weekdayNames[result1Date_gr.getDay()];
         
-        const result2Date_gr = new Date(lastDate_gr);
-        result2Date_gr.setDate(result2Date_gr.getDate() + cycleLength);
+        const result2_jalaali_gr = jalaali.toGregorian(result2Year, result2Month, result2Day);
+        const result2Date_gr = new Date(result2_jalaali_gr.gy, result2_jalaali_gr.gm - 1, result2_jalaali_gr.jd);
         weekday2 = weekdayNames[result2Date_gr.getDay()];
         
-        const result3Date_gr = new Date(result1Date_gr);
-        result3Date_gr.setMonth(result3Date_gr.getMonth() + 1);
+        // For result 3, convert Hebrew date to Gregorian for weekday
+        const result3Date_gr_ms = hebrewToGregorian(result3Year, result3Month, result3Day);
+        const result3Date_gr = new Date(result3Date_gr_ms);
         weekday3 = weekdayNames[result3Date_gr.getDay()];
       } else {
-        weekday1 = 'پنجشنبه';
-        weekday2 = 'جمعه';
-        weekday3 = 'شنبه';
+        // For Hebrew calendar, calculate weekdays properly
+        const result1Date_gr_ms = hebrewToGregorian(parseInt(result1Hebrew.split(' ')[2]), getHebrewMonthNumber(result1Hebrew.split(' ')[1]), parseInt(result1Hebrew.split(' ')[0]));
+        const result1Date_gr = new Date(result1Date_gr_ms);
+        weekday1 = weekdayNames[result1Date_gr.getDay()];
+        
+        const result2Date_gr_ms = hebrewToGregorian(parseInt(result2Hebrew.split(' ')[2]), getHebrewMonthNumber(result2Hebrew.split(' ')[1]), parseInt(result2Hebrew.split(' ')[0]));
+        const result2Date_gr = new Date(result2Date_gr_ms);
+        weekday2 = weekdayNames[result2Date_gr.getDay()];
+        
+        const result3Date_gr_ms = hebrewToGregorian(result3Year, result3Month, result3Day);
+        const result3Date_gr = new Date(result3Date_gr_ms);
+        weekday3 = weekdayNames[result3Date_gr.getDay()];
       }
 
       const mockResults: CalculationResult[] = [{
