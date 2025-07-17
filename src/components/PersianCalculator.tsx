@@ -308,7 +308,7 @@ const PersianCalculator: React.FC = () => {
         result3Persian = hebrewToPersian(result3Year.toString(), result3Month.toString(), result3Day.toString());
       }
 
-      // Calculate weekdays for Persian calendar
+      // Calculate weekdays for all results
       const weekdayNames = ['یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنجشنبه', 'جمعه', 'شنبه'];
       
       let weekday1, weekday2, weekday3;
@@ -316,7 +316,7 @@ const PersianCalculator: React.FC = () => {
       if (activeTab === 'persian') {
         // Convert Persian dates to Gregorian for weekday calculation
         const result1_jalaali_gr = jalaali.toGregorian(result1Year, result1Month, result1Day);
-        const result1Date_gr = new Date(result1_jalaali_gr.gy, result1_jalaali_gr.gm - 1, result1_jalaali_gr.jd);
+        const result1Date_gr = new Date(result1_jalaali_gr.gy, result1_jalaali_gr.gm - 1, result1_jalaali_gr.gd);
         weekday1 = weekdayNames[result1Date_gr.getDay()];
         
         const result2_jalaali_gr = jalaali.toGregorian(result2Year, result2Month, result2Day);
@@ -504,8 +504,18 @@ const PersianCalculator: React.FC = () => {
       const hebrewMonth = parseInt(month);
       const hebrewDay = parseInt(day);
       
+      // Validate inputs
+      if (isNaN(hebrewYear) || isNaN(hebrewMonth) || isNaN(hebrewDay)) {
+        return 'نامعتبر';
+      }
+      
       const gregorianMs = hebrewToGregorian(hebrewYear, hebrewMonth, hebrewDay);
       const gregorianDate = new Date(gregorianMs);
+      
+      // Validate the gregorian date
+      if (isNaN(gregorianDate.getTime())) {
+        return 'نامعتبر';
+      }
       
       // Convert Gregorian to Persian
       const jd = jalaali.toJalaali(gregorianDate.getFullYear(), gregorianDate.getMonth() + 1, gregorianDate.getDate());
