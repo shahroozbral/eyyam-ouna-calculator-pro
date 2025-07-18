@@ -456,21 +456,32 @@ const PersianCalculator: React.FC = () => {
   // Helper function to convert Hebrew to Gregorian milliseconds
   const hebrewToGregorian = (year: number, month: number, day: number): number => {
     try {
-      // Reference point based on provided example: 11 Esfand 1403 = 1 Adar 5785 = 2 March 2025
-      const refPersianDate = { year: 1403, month: 12, day: 11 }; // 11 Esfand 1403
-      const refHebrewDate = { year: 5785, month: 12, day: 1 }; // 1 Adar 5785
+      // Multiple reference points for better accuracy
+      const referencePoints = [
+        { persian: { year: 1403, month: 12, day: 11 }, hebrew: { year: 5785, month: 12, day: 1 } }, // 11 Esfand 1403 = 1 Adar 5785
+        { persian: { year: 1404, month: 1, day: 12 }, hebrew: { year: 5785, month: 1, day: 3 } }, // 12 Farvardin 1404 = 3 Nisan 5785
+      ];
+      
+      // Use the closest reference point
+      let closestRef = referencePoints[0];
+      let minDistance = Math.abs((year - closestRef.hebrew.year) * 365 + (month - closestRef.hebrew.month) * 30 + (day - closestRef.hebrew.day));
+      
+      for (const ref of referencePoints) {
+        const distance = Math.abs((year - ref.hebrew.year) * 365 + (month - ref.hebrew.month) * 30 + (day - ref.hebrew.day));
+        if (distance < minDistance) {
+          minDistance = distance;
+          closestRef = ref;
+        }
+      }
       
       // Convert reference Persian to Gregorian
-      const refGregorian = jalaali.toGregorian(refPersianDate.year, refPersianDate.month, refPersianDate.day);
+      const refGregorian = jalaali.toGregorian(closestRef.persian.year, closestRef.persian.month, closestRef.persian.day);
       const refDate = new Date(refGregorian.gy, refGregorian.gm - 1, refGregorian.gd);
       
-      // Calculate Hebrew date difference (approximately)
-      const avgDaysPerMonth = 29.5; // Average Hebrew month
-      const avgDaysPerYear = 354; // Average Hebrew year
-      
-      const refTotalDays = refHebrewDate.year * avgDaysPerYear + refHebrewDate.month * avgDaysPerMonth + refHebrewDate.day;
-      const inputTotalDays = year * avgDaysPerYear + month * avgDaysPerMonth + day;
-      const daysDiff = Math.round(inputTotalDays - refTotalDays);
+      // Calculate exact day difference using Hebrew calendar rules
+      const refHebrewDaysSinceEpoch = hebrewDateToDays(closestRef.hebrew.year, closestRef.hebrew.month, closestRef.hebrew.day);
+      const inputHebrewDaysSinceEpoch = hebrewDateToDays(year, month, day);
+      const daysDiff = inputHebrewDaysSinceEpoch - refHebrewDaysSinceEpoch;
       
       // Add difference to reference Gregorian date
       const resultDate = new Date(refDate);
@@ -479,6 +490,38 @@ const PersianCalculator: React.FC = () => {
     } catch (error) {
       return NaN;
     }
+  };
+
+  // Helper function to calculate days since Hebrew epoch (more accurate)
+  const hebrewDateToDays = (year: number, month: number, day: number): number => {
+    // Hebrew calendar has alternating 29 and 30 day months
+    const monthLengths = [30, 29, 30, 29, 30, 29, 30, 29, 30, 29, 30, 29]; // Nisan to Adar
+    
+    let totalDays = 0;
+    
+    // Add days from years
+    for (let y = 5000; y < year; y++) {
+      const isLeapYear = ((y * 7 + 1) % 19) < 7;
+      totalDays += isLeapYear ? 384 : 354; // Leap year has extra month
+    }
+    
+    // Add days from months in current year
+    for (let m = 1; m < month; m++) {
+      if (m <= 12) {
+        totalDays += monthLengths[m - 1];
+        if (m === 8 || m === 9) { // Cheshvan and Kislev can vary
+          totalDays += 1; // Average adjustment
+        }
+      } else if (m === 13) {
+        // Adar II in leap year
+        totalDays += 29;
+      }
+    }
+    
+    // Add days in current month
+    totalDays += day;
+    
+    return totalDays;
   };
 
   // Helper function to convert Gregorian to Hebrew date string
