@@ -6,9 +6,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Calendar, Calculator, Star, Clock, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import { Calendar, Calculator, Star, Clock, AlertCircle, CheckCircle2, Bug } from 'lucide-react';
 import { addDays, format } from 'date-fns';
 import * as jalaali from 'jalaali-js';
+import EmailForm from './EmailForm';
 interface DateInput {
   year: string;
   month: string;
@@ -35,6 +37,7 @@ const PersianCalculator: React.FC = () => {
   const [error, setError] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [showEmailForm, setShowEmailForm] = useState(false);
 
   // Persian month names
   const persianMonths = [{
@@ -90,7 +93,7 @@ const PersianCalculator: React.FC = () => {
     name: 'تموز'
   }, {
     value: '5',
-    name: 'آو'
+    name: 'اب'
   }, {
     value: '6',
     name: 'الول'
@@ -105,16 +108,16 @@ const PersianCalculator: React.FC = () => {
     name: 'کیسلو'
   }, {
     value: '10',
-    name: 'طوت'
+    name: 'تبت'
   }, {
     value: '11',
-    name: 'شواط'
+    name: 'شبت'
   }, {
     value: '12',
     name: 'ادار'
   }, {
     value: '13',
-    name: 'ادار دوم'
+    name: 'ادار ب'
   }];
 
   // Generate year options
@@ -214,9 +217,9 @@ const PersianCalculator: React.FC = () => {
         // Calculate interval between periods in days
         const intervalDays = Math.floor((lastDate_gr.getTime() - prevDate_gr.getTime()) / (1000 * 60 * 60 * 24));
 
-        // Result 1: 30 days after last period
+        // Result 1: 29 days after last period (since the day itself counts)
         const result1Date_gr = new Date(lastDate_gr);
-        result1Date_gr.setDate(result1Date_gr.getDate() + 30);
+        result1Date_gr.setDate(result1Date_gr.getDate() + 29);
         const result1_jalaali = jalaali.toJalaali(result1Date_gr.getFullYear(), result1Date_gr.getMonth() + 1, result1Date_gr.getDate());
         result1Day = result1_jalaali.jd;
         result1Month = result1_jalaali.jm;
@@ -238,13 +241,23 @@ const PersianCalculator: React.FC = () => {
         const lastHebrewDate = persianToHebrew(lastYear.toString(), lastMonth.toString(), lastDay.toString());
         const lastHebrewParts = lastHebrewDate.split(' ');
         if (lastHebrewParts.length >= 3) {
-          const hebrewDay = parseInt(lastHebrewParts[0]);
+          let hebrewDay = parseInt(lastHebrewParts[0]);
           let hebrewMonth = getHebrewMonthNumber(lastHebrewParts[1]) + 1; // Next month
           let hebrewYear = parseInt(lastHebrewParts[2]);
 
+          // Handle special case: if current day is 30 and next month has 29 days
+          if (hebrewDay === 30) {
+            // Check if next month has only 29 days (common in Hebrew calendar)
+            const monthsWith29Days = [2, 4, 6, 8, 10, 12]; // Iyar, Tammuz, Elul, Cheshvan, Tevet, Adar
+            if (monthsWith29Days.includes(hebrewMonth)) {
+              hebrewMonth += 1; // Move to month after next
+              hebrewDay = 1; // First day of that month
+            }
+          }
+
           // Handle month overflow for Hebrew calendar
+          const isLeapYear = (hebrewYear * 7 + 1) % 19 < 7;
           if (hebrewMonth > 12) {
-            const isLeapYear = hebrewYear % 19 === 0 || hebrewYear % 19 === 3 || hebrewYear % 19 === 6 || hebrewYear % 19 === 8 || hebrewYear % 19 === 11 || hebrewYear % 19 === 14 || hebrewYear % 19 === 17;
             if (hebrewMonth === 13 && !isLeapYear) {
               hebrewMonth = 1;
               hebrewYear += 1;
@@ -253,6 +266,7 @@ const PersianCalculator: React.FC = () => {
               hebrewYear += 1;
             }
           }
+          
           result3Day = hebrewDay;
           result3Month = hebrewMonth;
           result3Year = hebrewYear;
@@ -272,9 +286,9 @@ const PersianCalculator: React.FC = () => {
         // Calculate interval between periods in days
         const intervalDays = Math.floor((lastDate_gr.getTime() - prevDate_gr.getTime()) / (1000 * 60 * 60 * 24));
 
-        // Result 1: 30 days after last period 
+        // Result 1: 29 days after last period (since the day itself counts)
         const result1Date_gr = new Date(lastDate_gr);
-        result1Date_gr.setDate(result1Date_gr.getDate() + 30);
+        result1Date_gr.setDate(result1Date_gr.getDate() + 29);
         const result1Hebrew_date = gregorianToHebrew(result1Date_gr);
         result1Hebrew = result1Hebrew_date;
         result1Persian = hebrewToPersian(result1Hebrew_date.split(' ')[2], getHebrewMonthNumber(result1Hebrew_date.split(' ')[1]).toString(), result1Hebrew_date.split(' ')[0]);
@@ -291,9 +305,18 @@ const PersianCalculator: React.FC = () => {
         result3Month = lastMonth + 1;
         result3Year = lastYear;
 
+        // Handle special case: if current day is 30 and next month has 29 days
+        if (result3Day === 30) {
+          const monthsWith29Days = [2, 4, 6, 8, 10, 12]; // Iyar, Tammuz, Elul, Cheshvan, Tevet, Adar
+          if (monthsWith29Days.includes(result3Month)) {
+            result3Month += 1; // Move to month after next
+            result3Day = 1; // First day of that month
+          }
+        }
+
         // Handle month overflow properly for Hebrew calendar
+        const isLeapYear = (result3Year * 7 + 1) % 19 < 7;
         if (result3Month > 12) {
-          const isLeapYear = result3Year % 19 === 0 || result3Year % 19 === 3 || result3Year % 19 === 6 || result3Year % 19 === 8 || result3Year % 19 === 11 || result3Year % 19 === 14 || result3Year % 19 === 17;
           if (result3Month === 13 && !isLeapYear) {
             result3Month = 1;
             result3Year += 1;
@@ -302,6 +325,7 @@ const PersianCalculator: React.FC = () => {
             result3Year += 1;
           }
         }
+        
         result3Hebrew = formatHebrewDate(result3Year.toString(), result3Month.toString(), result3Day.toString());
         result3Persian = hebrewToPersian(result3Year.toString(), result3Month.toString(), result3Day.toString());
       }
@@ -405,22 +429,22 @@ const PersianCalculator: React.FC = () => {
         [key: string]: string;
       } = {
         'תשרי': 'تیشری',
-        'חשון': 'خشوان',
-        'חשוון': 'خشوان',
+        'חשון': 'خشוان',
+        'חשוון': 'خשوان',
         'כסלו': 'کیسلو',
-        'טבת': 'طوت',
-        'שבט': 'شواط',
+        'טבת': 'تبت',
+        'שבט': 'شبت',
         'אדר': 'ادار',
         'אדר א׳': 'ادار اول',
-        'אדר ב׳': 'ادار دوم',
+        'אדר ב׳': 'ادار ب',
         'אדר א': 'ادار اول',
-        'אדר ב': 'ادار دوم',
+        'אדר ב': 'ادار ب',
         'ניסן': 'نیسان',
         'אייר': 'ایار',
         'סיון': 'سیوان',
         'סיוון': 'سیوان',
         'תמוז': 'تموز',
-        'אב': 'آو',
+        'אב': 'اب',
         'אלול': 'الول'
       };
       let convertedDate = hebrewDate;
@@ -433,35 +457,26 @@ const PersianCalculator: React.FC = () => {
     }
   };
 
-  // Helper function to convert Hebrew to Gregorian milliseconds
+  // Helper function to convert Hebrew to Gregorian milliseconds  
   const hebrewToGregorian = (year: number, month: number, day: number): number => {
     try {
-      // Multiple reference points for better accuracy
-      const referencePoints = [{
-        persian: {
-          year: 1403,
-          month: 12,
-          day: 11
+      // Improved reference points for better conversion accuracy
+      const referencePoints = [
+        // 11 Esfand 1403 = 1 Adar 5785
+        {
+          persian: { year: 1403, month: 12, day: 11 },
+          hebrew: { year: 5785, month: 12, day: 1 }
         },
-        hebrew: {
-          year: 5785,
-          month: 12,
-          day: 1
-        }
-      },
-      // 11 Esfand 1403 = 1 Adar 5785
-      {
-        persian: {
-          year: 1404,
-          month: 1,
-          day: 12
+        // 12 Farvardin 1404 = 3 Nisan 5785
+        {
+          persian: { year: 1404, month: 1, day: 12 },
+          hebrew: { year: 5785, month: 1, day: 3 }
         },
-        hebrew: {
-          year: 5785,
-          month: 1,
-          day: 3
+        // Additional reference point for leap year calculations
+        {
+          persian: { year: 1406, month: 1, day: 9 },
+          hebrew: { year: 5787, month: 13, day: 20 }  // 9 Farvardin 1406 = 20 Adar II 5787
         }
-      } // 12 Farvardin 1404 = 3 Nisan 5785
       ];
 
       // Use the closest reference point
@@ -577,15 +592,15 @@ const PersianCalculator: React.FC = () => {
       'ایار': 2,
       'سیوان': 3,
       'تموز': 4,
-      'آو': 5,
+      'اب': 5,
       'الول': 6,
       'تیشری': 7,
       'خشوان': 8,
       'کیسلو': 9,
-      'طوت': 10,
-      'شواط': 11,
+      'تبت': 10,
+      'شبت': 11,
       'ادار': 12,
-      'ادار دوم': 13
+      'ادار ب': 13
     };
     return monthMap[monthName] || 1;
   };
@@ -718,6 +733,12 @@ const PersianCalculator: React.FC = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            <p className="text-lg leading-relaxed mb-4">
+              لطفا در وارد کردن تاریخ ها دقت نمایید ، برای مثال اگر قاعدگی در روز 1 فروردین 1404 - 21 ادار 5786 قبل از غروب بوده ، همان روز وگرنه تاریخ قاعدگی ماه جاری  2 فروردین 1404 - 22 ادار 5786 محاسبه می شود.
+            </p>
+            <p className="text-lg leading-relaxed mb-4">
+              این برنامه نتیجه سوم را برای حالت خاص که تاریخ قاعدگی ماه جاری 30ام بوده و ماه بعدی 29 روزه است را اول دو ماه بعد در نظر میگیرد.
+            </p>
             <p className="text-lg leading-relaxed">
               <strong>روش محاسبه:</strong> این برنامه سه تاریخ مهم را بر اساس تاریخ قاعدگی آخر محاسبه می‌کند:
             </p>
@@ -833,16 +854,30 @@ const PersianCalculator: React.FC = () => {
           <p className="text-lg font-semibold mb-2">برنامه محاسبه ایام عونا</p>
           <p className="opacity-90">طراحی شده برای استفاده راحت و دقیق</p>
           
-          {/* Add to Home Screen Button */}
-          <Button variant="secondary" size="lg" className="mt-6 bg-white/20 hover:bg-white/30 text-white border-white/30" onClick={() => {
-          if ('serviceWorker' in navigator) {
-            // Create shortcut functionality
-            alert('برای ایجاد میانبر، از منوی مرورگر گزینه "افزودن به صفحه اصلی" را انتخاب کنید');
-          }
-        }}>
-            <Star className="w-5 h-5 ml-2" />
-            ایجاد میانبر در صفحه اصلی
-          </Button>
+          <div className="flex gap-4 justify-center mt-6">
+            {/* Add to Home Screen Button */}
+            <Button variant="secondary" size="lg" className="bg-white/20 hover:bg-white/30 text-white border-white/30" onClick={() => {
+              if ('serviceWorker' in navigator) {
+                alert('برای ایجاد میانبر، از منوی مرورگر گزینه "افزودن به صفحه اصلی" را انتخاب کنید');
+              }
+            }}>
+              <Star className="w-5 h-5 ml-2" />
+              ایجاد میانبر در صفحه اصلی
+            </Button>
+
+            {/* Bug Report Button */}
+            <Dialog open={showEmailForm} onOpenChange={setShowEmailForm}>
+              <DialogTrigger asChild>
+                <Button variant="secondary" size="lg" className="bg-white/20 hover:bg-white/30 text-white border-white/30">
+                  <Bug className="w-5 h-5 ml-2" />
+                  گزارش ایراد
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl" dir="rtl">
+                <EmailForm onClose={() => setShowEmailForm(false)} />
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
       </div>
     </div>;
