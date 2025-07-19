@@ -6,8 +6,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
-import { Calendar, Calculator, Star, Clock, AlertCircle, CheckCircle2, Bug } from 'lucide-react';
+import { Dialog, DialogContent, DialogTrigger, DialogTitle } from '@/components/ui/dialog';
+import { Calendar, Calculator, Star, Clock, AlertCircle, CheckCircle2, Bug, ArrowUpDown } from 'lucide-react';
 import { addDays, format } from 'date-fns';
 import * as jalaali from 'jalaali-js';
 import EmailForm from './EmailForm';
@@ -134,19 +134,62 @@ const PersianCalculator: React.FC = () => {
   const days = Array.from({
     length: 31
   }, (_, i) => i + 1);
+  // Load data from localStorage on component mount
   useEffect(() => {
-    // Set default values for Persian calendar
-    setPrevDate({
-      year: currentPersianYear.toString(),
-      month: '3',
-      day: '17'
-    });
-    setLastDate({
-      year: currentPersianYear.toString(),
-      month: '4',
-      day: '15'
-    });
+    const savedData = localStorage.getItem('mensCalculatorData');
+    if (savedData) {
+      try {
+        const { activeTab: savedTab, prevDate: savedPrevDate, lastDate: savedLastDate, results: savedResults } = JSON.parse(savedData);
+        setActiveTab(savedTab || 'persian');
+        setPrevDate(savedPrevDate || {
+          year: currentPersianYear.toString(),
+          month: '3',
+          day: '17'
+        });
+        setLastDate(savedLastDate || {
+          year: currentPersianYear.toString(),
+          month: '4',
+          day: '15'
+        });
+        setResults(savedResults || []);
+      } catch (error) {
+        // If there's an error parsing saved data, use defaults
+        setPrevDate({
+          year: currentPersianYear.toString(),
+          month: '3',
+          day: '17'
+        });
+        setLastDate({
+          year: currentPersianYear.toString(),
+          month: '4',
+          day: '15'
+        });
+      }
+    } else {
+      // Set default values for Persian calendar
+      setPrevDate({
+        year: currentPersianYear.toString(),
+        month: '3',
+        day: '17'
+      });
+      setLastDate({
+        year: currentPersianYear.toString(),
+        month: '4',
+        day: '15'
+      });
+    }
   }, []);
+
+  // Save data to localStorage when state changes
+  useEffect(() => {
+    const dataToSave = {
+      activeTab,
+      prevDate,
+      lastDate,
+      results
+    };
+    localStorage.setItem('mensCalculatorData', JSON.stringify(dataToSave));
+  }, [activeTab, prevDate, lastDate, results]);
 
   // Update default years when tab changes
   useEffect(() => {
@@ -170,13 +213,52 @@ const PersianCalculator: React.FC = () => {
       }));
     }
   }, [activeTab]);
+  // Function to check if current date is newer than previous date
+  const isDateNewer = (current: DateInput, previous: DateInput): boolean => {
+    if (activeTab === 'persian') {
+      const currentGregorian = jalaali.toGregorian(parseInt(current.year), parseInt(current.month), parseInt(current.day));
+      const previousGregorian = jalaali.toGregorian(parseInt(previous.year), parseInt(previous.month), parseInt(previous.day));
+      const currentDate = new Date(currentGregorian.gy, currentGregorian.gm - 1, currentGregorian.gd);
+      const previousDate = new Date(previousGregorian.gy, previousGregorian.gm - 1, previousGregorian.gd);
+      return currentDate.getTime() > previousDate.getTime();
+    } else {
+      const currentMs = hebrewToGregorian(parseInt(current.year), parseInt(current.month), parseInt(current.day));
+      const previousMs = hebrewToGregorian(parseInt(previous.year), parseInt(previous.month), parseInt(previous.day));
+      return currentMs > previousMs;
+    }
+  };
+
+  // Function to swap dates if needed
+  const swapDatesIfNeeded = (): boolean => {
+    if (!prevDate.year || !prevDate.month || !prevDate.day || !lastDate.year || !lastDate.month || !lastDate.day) {
+      return false;
+    }
+
+    if (!isDateNewer(lastDate, prevDate)) {
+      const temp = { ...prevDate };
+      setPrevDate({ ...lastDate });
+      setLastDate(temp);
+      return true;
+    }
+    return false;
+  };
+
+  // Function to manually swap dates
+  const swapDates = () => {
+    const temp = { ...prevDate };
+    setPrevDate({ ...lastDate });
+    setLastDate(temp);
+  };
+
   const validateInputs = (): boolean => {
     if (!prevDate.year || !prevDate.month || !prevDate.day || !lastDate.year || !lastDate.month || !lastDate.day) {
       setError('لطفاً تمام فیلدها را پر کنید');
       return false;
     }
 
-    // Basic date validation would go here
+    // Auto-swap dates if needed
+    swapDatesIfNeeded();
+
     return true;
   };
   const formatPersianDate = (year: string, month: string, day: string): string => {
@@ -561,19 +643,19 @@ const PersianCalculator: React.FC = () => {
       'חשון': 'خشوان',
       'חשוון': 'خشوان',
       'כסלו': 'کیسلو',
-      'טבת': 'طوت',
-      'שבט': 'شواط',
+      'טבת': 'تبت',
+      'שבט': 'شبت',
       'אדר': 'ادار',
       'אדר א׳': 'ادار اول',
-      'אדר ב׳': 'ادار دوم',
+      'אדר ב׳': 'ادار ب',
       'אדר א': 'ادار اول',
-      'אדר ב': 'ادار دوم',
+      'אדר ב': 'ادار ب',
       'ניסן': 'نیسان',
       'אייר': 'ایار',
       'סיון': 'سیوان',
       'סיוון': 'سیوان',
       'תמוז': 'تموز',
-      'אב': 'آو',
+      'אב': 'اب',
       'אלול': 'الول'
     };
     let convertedDate = hebrewDate;
@@ -775,16 +857,40 @@ const PersianCalculator: React.FC = () => {
               </TabsList>
 
               <TabsContent value="persian" className="mt-6">
-                <div className="grid md:grid-cols-2 gap-6">
-                  <DateSelector title="تاریخ قاعدگی ماه قبلی (شمسی)" icon={<Clock className="w-5 h-5" />} value={prevDate} onChange={setPrevDate} months={persianMonths} years={persianYears} />
-                  <DateSelector title="تاریخ قاعدگی ماه جاری (شمسی)" icon={<Calendar className="w-5 h-5" />} value={lastDate} onChange={setLastDate} months={persianMonths} years={persianYears} />
+                <div className="space-y-4">
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <DateSelector title="تاریخ قاعدگی ماه قبلی (شمسی)" icon={<Clock className="w-5 h-5" />} value={prevDate} onChange={setPrevDate} months={persianMonths} years={persianYears} />
+                    <DateSelector title="تاریخ قاعدگی ماه جاری (شمسی)" icon={<Calendar className="w-5 h-5" />} value={lastDate} onChange={setLastDate} months={persianMonths} years={persianYears} />
+                  </div>
+                  <div className="flex justify-center">
+                    <Button 
+                      variant="outline" 
+                      onClick={swapDates}
+                      className="flex items-center gap-2"
+                    >
+                      <ArrowUpDown className="w-4 h-4" />
+                      جابجایی تاریخ ها
+                    </Button>
+                  </div>
                 </div>
               </TabsContent>
 
               <TabsContent value="hebrew" className="mt-6">
-                <div className="grid md:grid-cols-2 gap-6">
-                  <DateSelector title="تاریخ قاعدگی ماه قبلی (عبری)" icon={<Clock className="w-5 h-5" />} value={prevDate} onChange={setPrevDate} months={hebrewMonths} years={hebrewYears} />
-                  <DateSelector title="تاریخ قاعدگی ماه جاری (عبری)" icon={<Calendar className="w-5 h-5" />} value={lastDate} onChange={setLastDate} months={hebrewMonths} years={hebrewYears} />
+                <div className="space-y-4">
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <DateSelector title="تاریخ قاعدگی ماه قبلی (عبری)" icon={<Clock className="w-5 h-5" />} value={prevDate} onChange={setPrevDate} months={hebrewMonths} years={hebrewYears} />
+                    <DateSelector title="تاریخ قاعدگی ماه جاری (عبری)" icon={<Calendar className="w-5 h-5" />} value={lastDate} onChange={setLastDate} months={hebrewMonths} years={hebrewYears} />
+                  </div>
+                  <div className="flex justify-center">
+                    <Button 
+                      variant="outline" 
+                      onClick={swapDates}
+                      className="flex items-center gap-2"
+                    >
+                      <ArrowUpDown className="w-4 h-4" />
+                      جابجایی تاریخ ها
+                    </Button>
+                  </div>
                 </div>
               </TabsContent>
             </Tabs>
@@ -874,6 +980,7 @@ const PersianCalculator: React.FC = () => {
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-2xl" dir="rtl">
+                <DialogTitle>گزارش ایراد برنامه</DialogTitle>
                 <EmailForm onClose={() => setShowEmailForm(false)} />
               </DialogContent>
             </Dialog>
