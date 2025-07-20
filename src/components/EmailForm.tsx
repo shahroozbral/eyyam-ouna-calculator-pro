@@ -74,12 +74,25 @@ const EmailForm: React.FC<EmailFormProps> = ({ onClose }) => {
         }]
       };
 
-      // In a real implementation, you would send this to your backend
-      // For now, we'll just log it and show success
-      console.log('Email would be sent with data:', emailData);
+      // Create mailto link with attachment simulation
+      const subject = encodeURIComponent(`گزارش ایراد برنامه محاسبه ایام عونا - ${name || 'کاربر'}`);
+      const body = encodeURIComponent(
+        `نام: ${name || 'نامشخص'}\n\nشرح ایراد:\n${description}\n\nتاریخ ارسال: ${new Date().toLocaleDateString('fa-IR')}\nزمان ارسال: ${new Date().toLocaleTimeString('fa-IR')}\n\nاسکرین شات صفحه ضمیمه شده است.`
+      );
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Open email client with pre-filled information
+      window.open(`mailto:shahroozbral@gmail.com?subject=${subject}&body=${body}`, '_self');
+      
+      // Also try to download the screenshot for user to attach manually
+      const link = document.createElement('a');
+      link.download = 'screenshot.png';
+      link.href = screenshotDataUrl;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Simulate processing time
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
       setIsSubmitted(true);
       setTimeout(() => {
