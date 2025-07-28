@@ -1030,7 +1030,7 @@ const PersianCalculator: React.FC = () => {
         {/* Footer */}
         <div className="text-center mt-12 p-6 bg-gradient-persian text-white rounded-xl shadow-persian">
           <p className="text-lg font-semibold mb-2">برنامه محاسبه ایام عونا</p>
-          <p className="opacity-90">طراحی شده توسط الناز مختار کلیمی (کارشناسی ارشد مامایی ) و شهروز برال (کارشناسی ارشد عمران)</p>
+          <p className="opacity-90">طراحی شده توسط الناز مختار کلیمی (کارشناسی ارشد مامایی ) و مهندس شهروز برال </p>
           
           <div className="flex gap-4 justify-center mt-6">
             {/* Add to Home Screen Button */}
