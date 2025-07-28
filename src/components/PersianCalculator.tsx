@@ -139,7 +139,12 @@ const PersianCalculator: React.FC = () => {
     const savedData = localStorage.getItem('mensCalculatorData');
     if (savedData) {
       try {
-        const { activeTab: savedTab, prevDate: savedPrevDate, lastDate: savedLastDate, results: savedResults } = JSON.parse(savedData);
+        const {
+          activeTab: savedTab,
+          prevDate: savedPrevDate,
+          lastDate: savedLastDate,
+          results: savedResults
+        } = JSON.parse(savedData);
         setActiveTab(savedTab || 'persian');
         setPrevDate(savedPrevDate || {
           year: currentPersianYear.toString(),
@@ -233,10 +238,13 @@ const PersianCalculator: React.FC = () => {
     if (!prevDate.year || !prevDate.month || !prevDate.day || !lastDate.year || !lastDate.month || !lastDate.day) {
       return false;
     }
-
     if (!isDateNewer(lastDate, prevDate)) {
-      const temp = { ...prevDate };
-      setPrevDate({ ...lastDate });
+      const temp = {
+        ...prevDate
+      };
+      setPrevDate({
+        ...lastDate
+      });
       setLastDate(temp);
       return true;
     }
@@ -245,20 +253,22 @@ const PersianCalculator: React.FC = () => {
 
   // Function to manually swap dates
   const swapDates = () => {
-    const temp = { ...prevDate };
-    setPrevDate({ ...lastDate });
+    const temp = {
+      ...prevDate
+    };
+    setPrevDate({
+      ...lastDate
+    });
     setLastDate(temp);
   };
-
   const validateInputs = (): boolean => {
     if (!prevDate.year || !prevDate.month || !prevDate.day || !lastDate.year || !lastDate.month || !lastDate.day) {
       setError('لطفاً تمام فیلدها را پر کنید');
       return false;
     }
 
-  // Auto-swap dates if needed before any calculations
-  swapDatesIfNeeded();
-
+    // Auto-swap dates if needed before any calculations
+    swapDatesIfNeeded();
     return true;
   };
   const formatPersianDate = (year: string, month: string, day: string): string => {
@@ -348,7 +358,6 @@ const PersianCalculator: React.FC = () => {
               hebrewYear += 1;
             }
           }
-          
           result3Day = hebrewDay;
           result3Month = hebrewMonth;
           result3Year = hebrewYear;
@@ -407,7 +416,6 @@ const PersianCalculator: React.FC = () => {
             result3Year += 1;
           }
         }
-        
         result3Hebrew = formatHebrewDate(result3Year.toString(), result3Month.toString(), result3Day.toString());
         result3Persian = hebrewToPersian(result3Year.toString(), result3Month.toString(), result3Day.toString());
       }
@@ -544,38 +552,94 @@ const PersianCalculator: React.FC = () => {
     try {
       // Accurate reference points for Hebrew calendar conversion
       const referencePoints = [
-        // Base reference: 11 Esfand 1403 = 1 Adar 5785
-        {
-          persian: { year: 1403, month: 12, day: 11 },
-          hebrew: { year: 5785, month: 12, day: 1 }
+      // Base reference: 11 Esfand 1403 = 1 Adar 5785
+      {
+        persian: {
+          year: 1403,
+          month: 12,
+          day: 11
         },
-        // 12 Farvardin 1404 = 3 Nisan 5785
-        {
-          persian: { year: 1404, month: 1, day: 12 },
-          hebrew: { year: 5785, month: 1, day: 3 }
-        },
-        // Corrected reference points based on accurate calculations
-        {
-          persian: { year: 1404, month: 5, day: 15 }, // 15 Mordad 1404 
-          hebrew: { year: 5785, month: 5, day: 12 }   // = 12 Av 5785
-        },
-        {
-          persian: { year: 1404, month: 8, day: 15 }, // 15 Aban 1404 
-          hebrew: { year: 5786, month: 8, day: 15 }   // = 15 Cheshvan 5786
-        },
-        {
-          persian: { year: 1404, month: 10, day: 15 }, // 15 Dey 1404 
-          hebrew: { year: 5786, month: 10, day: 16 }   // = 16 Tevet 5786
-        },
-        {
-          persian: { year: 1404, month: 11, day: 15 }, // 15 Bahman 1404 
-          hebrew: { year: 5786, month: 11, day: 17 }   // = 17 Shevat 5786
-        },
-        {
-          persian: { year: 1406, month: 1, day: 9 }, // 9 Farvardin 1406 = 20 Adar II 5787
-          hebrew: { year: 5787, month: 13, day: 20 }
+        hebrew: {
+          year: 5785,
+          month: 12,
+          day: 1
         }
-      ];
+      },
+      // 12 Farvardin 1404 = 3 Nisan 5785
+      {
+        persian: {
+          year: 1404,
+          month: 1,
+          day: 12
+        },
+        hebrew: {
+          year: 5785,
+          month: 1,
+          day: 3
+        }
+      },
+      // Corrected reference points based on accurate calculations
+      {
+        persian: {
+          year: 1404,
+          month: 5,
+          day: 15
+        },
+        // 15 Mordad 1404 
+        hebrew: {
+          year: 5785,
+          month: 5,
+          day: 12
+        } // = 12 Av 5785
+      }, {
+        persian: {
+          year: 1404,
+          month: 8,
+          day: 15
+        },
+        // 15 Aban 1404 
+        hebrew: {
+          year: 5786,
+          month: 8,
+          day: 15
+        } // = 15 Cheshvan 5786
+      }, {
+        persian: {
+          year: 1404,
+          month: 10,
+          day: 15
+        },
+        // 15 Dey 1404 
+        hebrew: {
+          year: 5786,
+          month: 10,
+          day: 16
+        } // = 16 Tevet 5786
+      }, {
+        persian: {
+          year: 1404,
+          month: 11,
+          day: 15
+        },
+        // 15 Bahman 1404 
+        hebrew: {
+          year: 5786,
+          month: 11,
+          day: 17
+        } // = 17 Shevat 5786
+      }, {
+        persian: {
+          year: 1406,
+          month: 1,
+          day: 9
+        },
+        // 9 Farvardin 1406 = 20 Adar II 5787
+        hebrew: {
+          year: 5787,
+          month: 13,
+          day: 20
+        }
+      }];
 
       // Use the closest reference point
       let closestRef = referencePoints[0];
@@ -879,11 +943,7 @@ const PersianCalculator: React.FC = () => {
                     <DateSelector title="تاریخ قاعدگی ماه جاری (شمسی)" icon={<Calendar className="w-5 h-5" />} value={lastDate} onChange={setLastDate} months={persianMonths} years={persianYears} />
                   </div>
                   <div className="flex justify-center">
-                    <Button 
-                      variant="outline" 
-                      onClick={swapDates}
-                      className="flex items-center gap-2"
-                    >
+                    <Button variant="outline" onClick={swapDates} className="flex items-center gap-2">
                       <ArrowUpDown className="w-4 h-4" />
                       جابجایی تاریخ ها
                     </Button>
@@ -898,11 +958,7 @@ const PersianCalculator: React.FC = () => {
                     <DateSelector title="تاریخ قاعدگی ماه جاری (عبری)" icon={<Calendar className="w-5 h-5" />} value={lastDate} onChange={setLastDate} months={hebrewMonths} years={hebrewYears} />
                   </div>
                   <div className="flex justify-center">
-                    <Button 
-                      variant="outline" 
-                      onClick={swapDates}
-                      className="flex items-center gap-2"
-                    >
+                    <Button variant="outline" onClick={swapDates} className="flex items-center gap-2">
                       <ArrowUpDown className="w-4 h-4" />
                       جابجایی تاریخ ها
                     </Button>
@@ -974,15 +1030,15 @@ const PersianCalculator: React.FC = () => {
         {/* Footer */}
         <div className="text-center mt-12 p-6 bg-gradient-persian text-white rounded-xl shadow-persian">
           <p className="text-lg font-semibold mb-2">برنامه محاسبه ایام عونا</p>
-          <p className="opacity-90">طراحی شده برای استفاده راحت و دقیق</p>
+          <p className="opacity-90">طراحی شده توسط شهروز برال</p>
           
           <div className="flex gap-4 justify-center mt-6">
             {/* Add to Home Screen Button */}
             <Button variant="secondary" size="lg" className="bg-white/20 hover:bg-white/30 text-white border-white/30" onClick={() => {
-              if ('serviceWorker' in navigator) {
-                alert('برای ایجاد میانبر، از منوی مرورگر گزینه "افزودن به صفحه اصلی" را انتخاب کنید');
-              }
-            }}>
+            if ('serviceWorker' in navigator) {
+              alert('برای ایجاد میانبر، از منوی مرورگر گزینه "افزودن به صفحه اصلی" را انتخاب کنید');
+            }
+          }}>
               <Star className="w-5 h-5 ml-2" />
               ایجاد میانبر در صفحه اصلی
             </Button>
