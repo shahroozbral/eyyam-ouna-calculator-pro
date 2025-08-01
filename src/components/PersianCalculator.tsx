@@ -93,7 +93,7 @@ const PersianCalculator: React.FC = () => {
     name: 'تموز'
   }, {
     value: '5',
-    name: 'اب'
+    name: 'آو'
   }, {
     value: '6',
     name: 'الول'
@@ -108,10 +108,10 @@ const PersianCalculator: React.FC = () => {
     name: 'کیسلو'
   }, {
     value: '10',
-    name: 'تبت'
+    name: 'طوت'
   }, {
     value: '11',
-    name: 'شبت'
+    name: 'شواط'
   }, {
     value: '12',
     name: 'ادار'
@@ -133,6 +133,11 @@ const PersianCalculator: React.FC = () => {
   // Generate day options
   const days = Array.from({
     length: 31
+  }, (_, i) => i + 1);
+  
+  // Generate Hebrew day options (1-30)
+  const hebrewDays = Array.from({
+    length: 30
   }, (_, i) => i + 1);
   // Load data from localStorage on component mount
   useEffect(() => {
@@ -283,12 +288,16 @@ const PersianCalculator: React.FC = () => {
     setError('');
     setSuccess(false);
     if (!validateInputs()) return;
+    
+    // Auto-swap dates if needed before calculations
+    swapDatesIfNeeded();
+    
     setLoading(true);
     try {
       // Simulate calculation delay
       await new Promise(resolve => setTimeout(resolve, 1000));
 
-      // Parse input dates
+      // Parse input dates (use current state after potential swapping)
       const lastDay = parseInt(lastDate.day);
       const lastMonth = parseInt(lastDate.month);
       const lastYear = parseInt(lastDate.year);
@@ -522,8 +531,8 @@ const PersianCalculator: React.FC = () => {
         'חשון': 'خشוان',
         'חשוון': 'خשوان',
         'כסלו': 'کیسلو',
-        'טבת': 'تبت',
-        'שבט': 'شبت',
+        'טבת': 'طوت',
+        'שבט': 'شواط',
         'אדר': 'ادار',
         'אדר א׳': 'ادار اول',
         'אדר ב׳': 'ادار ب',
@@ -534,7 +543,7 @@ const PersianCalculator: React.FC = () => {
         'סיון': 'سیوان',
         'סיוון': 'سیوان',
         'תמוז': 'تموز',
-        'אב': 'اب',
+        'אב': 'آو',
         'אלול': 'الول'
       };
       let convertedDate = hebrewDate;
@@ -723,8 +732,8 @@ const PersianCalculator: React.FC = () => {
       'חשון': 'خشوان',
       'חשוון': 'خشوان',
       'כסלו': 'کیسلو',
-      'טבת': 'تبت',
-      'שבט': 'شبت',
+        'טבת': 'طوت',
+        'שבט': 'شواط',
       'אדר': 'ادار',
       'אדר א׳': 'ادار اول',
       'אדר ב׳': 'ادار ب',
@@ -735,7 +744,7 @@ const PersianCalculator: React.FC = () => {
       'סיון': 'سیوان',
       'סיוון': 'سیوان',
       'תמוז': 'تموز',
-      'אב': 'اب',
+      'אב': 'آو',
       'אלול': 'الول'
     };
     let convertedDate = hebrewDate;
@@ -754,13 +763,13 @@ const PersianCalculator: React.FC = () => {
       'ایار': 2,
       'سیوان': 3,
       'تموز': 4,
-      'اب': 5,
+      'آو': 5,
       'الول': 6,
       'تیشری': 7,
       'خشوان': 8,
       'کیسلو': 9,
-      'تبت': 10,
-      'شبت': 11,
+      'طوت': 10,
+      'شواط': 11,
       'ادار': 12,
       'ادار ب': 13
     };
@@ -804,13 +813,15 @@ const PersianCalculator: React.FC = () => {
       name: string;
     }[];
     years: number[];
+    days: number[];
   }> = ({
     title,
     icon,
     value,
     onChange,
     months,
-    years
+    years,
+    days
   }) => <Card className="shadow-card hover:shadow-lg transition-all duration-300 border-2 hover:border-primary/20">
       <CardHeader className="pb-4">
         <CardTitle className="flex items-center gap-3 text-lg text-primary">
@@ -939,8 +950,8 @@ const PersianCalculator: React.FC = () => {
               <TabsContent value="persian" className="mt-6">
                 <div className="space-y-4">
                   <div className="grid md:grid-cols-2 gap-6">
-                    <DateSelector title="تاریخ قاعدگی ماه قبلی (شمسی)" icon={<Clock className="w-5 h-5" />} value={prevDate} onChange={setPrevDate} months={persianMonths} years={persianYears} />
-                    <DateSelector title="تاریخ قاعدگی ماه جاری (شمسی)" icon={<Calendar className="w-5 h-5" />} value={lastDate} onChange={setLastDate} months={persianMonths} years={persianYears} />
+                    <DateSelector title="تاریخ قاعدگی ماه قبلی (شمسی)" icon={<Clock className="w-5 h-5" />} value={prevDate} onChange={setPrevDate} months={persianMonths} years={persianYears} days={days} />
+                    <DateSelector title="تاریخ قاعدگی ماه جاری (شمسی)" icon={<Calendar className="w-5 h-5" />} value={lastDate} onChange={setLastDate} months={persianMonths} years={persianYears} days={days} />
                   </div>
                   <div className="flex justify-center">
                     <Button variant="outline" onClick={swapDates} className="flex items-center gap-2">
@@ -954,8 +965,8 @@ const PersianCalculator: React.FC = () => {
               <TabsContent value="hebrew" className="mt-6">
                 <div className="space-y-4">
                   <div className="grid md:grid-cols-2 gap-6">
-                    <DateSelector title="تاریخ قاعدگی ماه قبلی (عبری)" icon={<Clock className="w-5 h-5" />} value={prevDate} onChange={setPrevDate} months={hebrewMonths} years={hebrewYears} />
-                    <DateSelector title="تاریخ قاعدگی ماه جاری (عبری)" icon={<Calendar className="w-5 h-5" />} value={lastDate} onChange={setLastDate} months={hebrewMonths} years={hebrewYears} />
+                    <DateSelector title="تاریخ قاعدگی ماه قبلی (عبری)" icon={<Clock className="w-5 h-5" />} value={prevDate} onChange={setPrevDate} months={hebrewMonths} years={hebrewYears} days={hebrewDays} />
+                    <DateSelector title="تاریخ قاعدگی ماه جاری (عبری)" icon={<Calendar className="w-5 h-5" />} value={lastDate} onChange={setLastDate} months={hebrewMonths} years={hebrewYears} days={hebrewDays} />
                   </div>
                   <div className="flex justify-center">
                     <Button variant="outline" onClick={swapDates} className="flex items-center gap-2">
