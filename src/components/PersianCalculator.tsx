@@ -504,15 +504,53 @@ const PersianCalculator: React.FC = () => {
     };
   };
 
-  // Convert Hebrew date to Gregorian timestamp
-  const hebrewToGregorian = (year: number, month: number, day: number): number => {
-    // Simple conversion for Hebrew calendar to Gregorian
-    // This is a simplified version - in practice you'd use a proper Hebrew calendar library
-    const gregorianYear = year - 3760;
-    const gregorianMonth = month + 3; // Rough approximation
-    const gregorianDay = day;
-    
-    return new Date(gregorianYear, gregorianMonth - 1, gregorianDay).getTime();
+  // Convert Hebrew date to Gregorian using proper calendar conversion
+  const hebrewToGregorian = (year: number, month: number, day: number): Date => {
+    // Use a reference date to build Hebrew date
+    // This is a more accurate approach using the Intl API
+    try {
+      // Create a Hebrew calendar date string
+      const hebrewMonthNames = [
+        'תשרי', 'חשוון', 'כסלו', 'טבת', 'שבט', 'אדר', 'ניסן', 'אייר', 'סיוון', 'תמוז', 'אב', 'אלול'
+      ];
+      
+      // Estimate Gregorian year (Hebrew year is typically 3760-3761 years ahead)
+      const estimatedGregorianYear = year - 3760;
+      
+      // Create multiple test dates around the estimated time to find the correct conversion
+      for (let testYear = estimatedGregorianYear - 1; testYear <= estimatedGregorianYear + 1; testYear++) {
+        for (let testMonth = 1; testMonth <= 12; testMonth++) {
+          for (let testDay = 1; testDay <= 28; testDay++) {
+            const testDate = new Date(testYear, testMonth - 1, testDay);
+            const hebrewFormatter = new Intl.DateTimeFormat('he-u-ca-hebrew', {
+              year: 'numeric',
+              month: 'numeric',
+              day: 'numeric',
+              numberingSystem: 'latn'
+            });
+            
+            const hebrewDateStr = hebrewFormatter.format(testDate);
+            const parts = hebrewDateStr.split(/[\/\-\s]+/);
+            
+            if (parts.length >= 3) {
+              const hDay = parseInt(parts[0]) || parseInt(parts[2]);
+              const hMonth = parseInt(parts[1]);
+              const hYear = parseInt(parts[2]) || parseInt(parts[0]);
+              
+              if (hYear === year && hMonth === month && hDay === day) {
+                return testDate;
+              }
+            }
+          }
+        }
+      }
+      
+      // Fallback: rough approximation
+      return new Date(estimatedGregorianYear, month - 1, day);
+    } catch (error) {
+      // Fallback conversion
+      return new Date(year - 3760, month - 1, day);
+    }
   };
 
   // Convert Gregorian date to Hebrew string
@@ -529,18 +567,19 @@ const PersianCalculator: React.FC = () => {
     // Clean up the Hebrew date string
     hebrewDate = hebrewDate.replace(/ב'/g, '').replace(/ב/g, '').replace(/'/g, '');
     
-    // Convert Hebrew month names to Persian equivalents
+    // Complete Hebrew month names to Persian equivalents mapping
     const monthMap: { [key: string]: string } = {
       'תשרי': 'تیشری',
       'חשון': 'خشوان',
       'חשוון': 'خشوان',
+      'מרחשון': 'خشوان',
       'כסלו': 'کیسلو',
       'טבת': 'طوت',
       'שבט': 'شواط',
       'אדר ב׳': 'ادار ب',
       'אדר ב': 'ادار ب',
-      'אדר א׳': 'ادار',
-      'אדר א': 'ادار',
+      'אדר א׳': 'ادار א',
+      'אדר א': 'ادار א',
       'אדר': 'ادار',
       'ניסן': 'نیسان',
       'אייר': 'ایار',
@@ -548,7 +587,21 @@ const PersianCalculator: React.FC = () => {
       'סיוון': 'سیوان',
       'תמוז': 'تموز',
       'אב': 'آو',
-      'אלול': 'الول'
+      'אלול': 'الول',
+      // Abbreviated forms
+      'תש': 'تیشری',
+      'חש': 'خشوان',
+      'כס': 'کیسلو',
+      'טב': 'طوت',
+      'שב': 'شواط',
+      'שט': 'שواط',
+      'טת': 'طوت',
+      'אד': 'ادار',
+      'ני': 'نیسان',
+      'אי': 'ایار',
+      'סי': 'سیوان',
+      'תמ': 'تموز',
+      'אל': 'الول'
     };
     
     let convertedDate = hebrewDate;
@@ -587,13 +640,14 @@ const PersianCalculator: React.FC = () => {
         'תשרי': 'تیشری',
         'חשון': 'خشوان',
         'חשוון': 'خشوان',
+        'מרחשון': 'خشوان',
         'כסלו': 'کیسلو',
         'טבת': 'طوت',
         'שבט': 'شواط',
         'אדר ב׳': 'ادار ب',
         'אדר ב': 'ادار ب',
-        'אדר א׳': 'ادار',
-        'אדר א': 'ادار',
+        'אדר א׳': 'ادار א',
+        'אדר א': 'ادار א',
         'אדר': 'ادار',
         'ניסן': 'نیسان',
         'אייר': 'ایار',
@@ -602,8 +656,20 @@ const PersianCalculator: React.FC = () => {
         'תמוז': 'تموز',
         'אב': 'آو',
         'אלול': 'الول',
-        'שט': 'شواط', // اختصار شواط
-        'טת': 'طوت',  // اختصار طوت
+        // Abbreviated forms
+        'תש': 'تیشری',
+        'חש': 'خشوان',
+        'כס': 'کیسلو',
+        'טב': 'طوت',
+        'שב': 'شواط',
+        'שט': 'شواط',
+        'טת': 'طوت',
+        'אד': 'ادار',
+        'ני': 'نیسان',
+        'אי': 'ایار',
+        'סי': 'سیوان',
+        'תמ': 'تموز',
+        'אל': 'الول'
       };
       let convertedDate = hebrewDate;
       // Replace with word boundaries to avoid partial matches
