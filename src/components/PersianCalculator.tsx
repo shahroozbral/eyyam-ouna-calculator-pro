@@ -773,9 +773,22 @@ const PersianCalculator: React.FC = () => {
 
   // Helper function to get Hebrew month number from name
   const getHebrewMonthNumber = (monthName: string): number => {
-    const monthMap: {
-      [key: string]: number;
-    } = {
+    // Normalize input
+    const normalized = monthName
+      .replace(/אדר ב׳|אדר ב|ادار ب|אדר II|Adar II|Adar B|Adar Bet|Adar Sheni|אדר שנ"י|אדר שנ"י/g, 'ادار ب')
+      .replace(/אדר א׳|אדר א|ادار|אדר I|Adar I|Adar Alef|Adar Rishon/g, 'ادار')
+      .replace(/ניסן|Nisan/g, 'نیسان')
+      .replace(/אייר|Iyar/g, 'ایار')
+      .replace(/סיון|סיוון|Sivan/g, 'سیوان')
+      .replace(/תמוז|Tamuz|Tammuz/g, 'تموز')
+      .replace(/אב|Av/g, 'آو')
+      .replace(/אלול|Elul/g, 'الول')
+      .replace(/תשרי|Tishrei/g, 'تیشری')
+      .replace(/חשון|חשוון|Cheshvan/g, 'خشوان')
+      .replace(/כסלו|Kislev/g, 'کیسلو')
+      .replace(/טבת|Tevet/g, 'طوت')
+      .replace(/שבט|Shevat/g, 'شواط');
+    const monthMap: { [key: string]: number } = {
       'نیسان': 1,
       'ایار': 2,
       'سیوان': 3,
@@ -790,7 +803,13 @@ const PersianCalculator: React.FC = () => {
       'ادار': 12,
       'ادار ب': 13
     };
-    return monthMap[monthName] || 1;
+    // Try exact match, then fallback to partial match
+    if (monthMap[normalized]) return monthMap[normalized];
+    // Try to find by partial match (for cases like 'آو' in '12 آو 5785')
+    for (const key of Object.keys(monthMap)) {
+      if (normalized.includes(key)) return monthMap[key];
+    }
+    return 1;
   };
 
   // Convert Hebrew date to Persian date  
