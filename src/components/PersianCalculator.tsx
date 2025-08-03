@@ -773,8 +773,9 @@ const PersianCalculator: React.FC = () => {
 
   // Helper function to get Hebrew month number from name
   const getHebrewMonthNumber = (monthName: string): number => {
-    // Normalize input
-    const normalized = monthName
+    // Normalize input: trim, collapse spaces, and replace all known variants
+    let normalized = monthName.trim().replace(/\s+/g, ' ');
+    normalized = normalized
       .replace(/אדר ב׳|אדר ב|ادار ب|אדר II|Adar II|Adar B|Adar Bet|Adar Sheni|אדר שנ"י|אדר שנ"י/g, 'ادار ب')
       .replace(/אדר א׳|אדר א|ادار|אדר I|Adar I|Adar Alef|Adar Rishon/g, 'ادار')
       .replace(/ניסן|Nisan/g, 'نیسان')
@@ -788,6 +789,11 @@ const PersianCalculator: React.FC = () => {
       .replace(/כסלו|Kislev/g, 'کیسلو')
       .replace(/טבת|Tevet/g, 'طوت')
       .replace(/שבט|Shevat/g, 'شواط');
+    // Remove any numbers or extra characters before/after
+    normalized = normalized.replace(/^[0-9]+\s*/, '').replace(/\s*[0-9]+$/, '');
+    normalized = normalized.trim();
+    // Debug log for tracing
+    // console.log('getHebrewMonthNumber input:', monthName, 'normalized:', normalized);
     const monthMap: { [key: string]: number } = {
       'نیسان': 1,
       'ایار': 2,
@@ -803,7 +809,6 @@ const PersianCalculator: React.FC = () => {
       'ادار': 12,
       'ادار ب': 13
     };
-    // Try exact match, then fallback to partial match
     if (monthMap[normalized]) return monthMap[normalized];
     // Try to find by partial match (for cases like 'آو' in '12 آو 5785')
     for (const key of Object.keys(monthMap)) {
