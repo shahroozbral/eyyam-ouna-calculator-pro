@@ -504,6 +504,61 @@ const PersianCalculator: React.FC = () => {
     };
   };
 
+  // Convert Hebrew date to Gregorian timestamp
+  const hebrewToGregorian = (year: number, month: number, day: number): number => {
+    // Simple conversion for Hebrew calendar to Gregorian
+    // This is a simplified version - in practice you'd use a proper Hebrew calendar library
+    const gregorianYear = year - 3760;
+    const gregorianMonth = month + 3; // Rough approximation
+    const gregorianDay = day;
+    
+    return new Date(gregorianYear, gregorianMonth - 1, gregorianDay).getTime();
+  };
+
+  // Convert Gregorian date to Hebrew string
+  const gregorianToHebrew = (date: Date): string => {
+    // Simple conversion using Intl.DateTimeFormat with Hebrew calendar
+    const hebrewFormatter = new Intl.DateTimeFormat('he-u-ca-hebrew', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      numberingSystem: 'latn'
+    });
+    let hebrewDate = hebrewFormatter.format(date);
+    
+    // Clean up the Hebrew date string
+    hebrewDate = hebrewDate.replace(/ב'/g, '').replace(/ב/g, '').replace(/'/g, '');
+    
+    // Convert Hebrew month names to Persian equivalents
+    const monthMap: { [key: string]: string } = {
+      'תשרי': 'تیشری',
+      'חשון': 'خشوان',
+      'חשוון': 'خشوان',
+      'כסלו': 'کیسلو',
+      'טבת': 'طوت',
+      'שבט': 'شواط',
+      'אדר ב׳': 'ادار ب',
+      'אדר ב': 'ادار ب',
+      'אדר א׳': 'ادار',
+      'אדר א': 'ادار',
+      'אדר': 'ادار',
+      'ניסן': 'نیسان',
+      'אייר': 'ایار',
+      'סיון': 'سیوان',
+      'סיוון': 'سیوان',
+      'תמוז': 'تموز',
+      'אב': 'آو',
+      'אלול': 'الول'
+    };
+    
+    let convertedDate = hebrewDate;
+    for (const [hebrew, persian] of Object.entries(monthMap)) {
+      convertedDate = convertedDate.replace(new RegExp(`\\b${hebrew}\\b`, 'g'), persian);
+    }
+    
+    return convertedDate;
+  };
+
   // Convert Persian date to Hebrew date
   const persianToHebrew = (year: string, month: string, day: string): string => {
     try {
@@ -550,12 +605,15 @@ const PersianCalculator: React.FC = () => {
         'שט': 'شواط', // اختصار شواط
         'טת': 'طوت',  // اختصار طوت
       };
-    let convertedDate = hebrewDate;
-    // Replace with word boundaries to avoid partial matches
-    for (const [hebrew, persian] of Object.entries(monthMap)) {
-      convertedDate = convertedDate.replace(new RegExp(`\\b${hebrew}\\b`, 'g'), persian);
+      let convertedDate = hebrewDate;
+      // Replace with word boundaries to avoid partial matches
+      for (const [hebrew, persian] of Object.entries(monthMap)) {
+        convertedDate = convertedDate.replace(new RegExp(`\\b${hebrew}\\b`, 'g'), persian);
+      }
+      return convertedDate;
+    } catch (error) {
+      return 'نامعتبر';
     }
-    return convertedDate;
   };
 
   // Helper function to get Hebrew month number from name
@@ -712,7 +770,9 @@ const PersianCalculator: React.FC = () => {
           </div>}
       </CardContent>
     </Card>;
-  return <div className="min-h-screen bg-gradient-subtle" dir="rtl">
+
+  return (
+    <div className="min-h-screen bg-gradient-subtle" dir="rtl">
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         {/* Header */}
         <div className="text-center mb-8">
@@ -898,6 +958,7 @@ const PersianCalculator: React.FC = () => {
           </div>
         </div>
       </div>
-    </div>;
+    </div>
+  );
 };
 export default PersianCalculator;
