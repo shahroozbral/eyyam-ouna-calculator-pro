@@ -527,25 +527,19 @@ const PersianCalculator: React.FC = () => {
       // Remove Hebrew prefixes and clean up the string
       hebrewDate = hebrewDate.replace(/ב'/g, '').replace(/ב/g, '').replace(/'/g, '');
 
-      // Convert Hebrew month names to Persian/Farsi equivalents
-      const monthMap: {
-        [key: string]: string;
-      } = {
+      // Convert Hebrew month names to Persian/Farsi equivalents (use word boundaries for accuracy)
+      const monthMap: { [key: string]: string } = {
         'תשרי': 'تیشری',
         'חשון': 'خشوان',
         'חשוון': 'خشوان',
         'כסלו': 'کیسلو',
         'טבת': 'طوت',
-        'טבת׳': 'طوت',
-        'טבת׳׳': 'طوت',
         'שבט': 'شواط',
-        'שבט׳': 'شواط',
-        'שבט׳׳': 'شواط',
-        'אדר': 'ادار',
-        'אדר א׳': 'ادار',
         'אדר ב׳': 'ادار ب',
-        'אדר א': 'ادار',
         'אדר ב': 'ادار ب',
+        'אדר א׳': 'ادار',
+        'אדר א': 'ادار',
+        'אדר': 'ادار',
         'ניסן': 'نیسان',
         'אייר': 'ایار',
         'סיון': 'سیوان',
@@ -555,10 +549,12 @@ const PersianCalculator: React.FC = () => {
         'אלול': 'الول',
         'שט': 'شواط', // اختصار شواط
         'טת': 'طوت',  // اختصار طوت
+        'א': 'آو' // جلوگیری از اشتباه א به جای آو
       };
       let convertedDate = hebrewDate;
+      // Replace with word boundaries to avoid partial matches
       for (const [hebrew, persian] of Object.entries(monthMap)) {
-        convertedDate = convertedDate.replace(new RegExp(hebrew, 'g'), persian);
+        convertedDate = convertedDate.replace(new RegExp(`\\b${hebrew}\\b`, 'g'), persian);
       }
       return convertedDate;
     } catch (error) {
@@ -734,39 +730,34 @@ const PersianCalculator: React.FC = () => {
     // Remove Hebrew prefixes and clean up the string
     hebrewDate = hebrewDate.replace(/ב'/g, '').replace(/ב/g, '').replace(/'/g, '');
 
-    // Convert Hebrew month names to Persian/Farsi equivalents
-    const monthMap: {
-      [key: string]: string;
-    } = {
+    // Convert Hebrew month names to Persian/Farsi equivalents (use word boundaries for accuracy)
+    const monthMap: { [key: string]: string } = {
       'תשרי': 'تیشری',
       'חשון': 'خشوان',
       'חשוון': 'خشوان',
       'כסלו': 'کیسلو',
       'טבת': 'طوت',
-      'טבת׳': 'طوت',
-      'טבת׳׳': 'طوت',
       'שבט': 'شواط',
-      'שבט׳': 'شواط',
-      'שבט׳׳': 'شواط',
-      'אדר': 'ادار',
-      'אדר א׳': 'ادار',
       'אדר ב׳': 'ادار ب',
-      'אדר א': 'ادار',
       'אדר ב': 'ادار ب',
+      'אדר א׳': 'ادار',
+      'אדר א': 'ادار',
+      'אדר': 'ادار',
       'ניסן': 'نیسان',
       'אייר': 'ایار',
       'סיון': 'سیوان',
       'סיוון': 'سیوان',
       'תמוז': 'تموز',
       'אב': 'آو',
-      'ا': 'آو', // اختصار آو
       'אלול': 'الول',
       'שט': 'شواط', // اختصار شواط
       'טת': 'طوت',  // اختصار طوت
+      'א': 'آو' // جلوگیری از اشتباه א به جای آو
     };
     let convertedDate = hebrewDate;
+    // Replace with word boundaries to avoid partial matches
     for (const [hebrew, persian] of Object.entries(monthMap)) {
-      convertedDate = convertedDate.replace(new RegExp(hebrew, 'g'), persian);
+      convertedDate = convertedDate.replace(new RegExp(`\\b${hebrew}\\b`, 'g'), persian);
     }
     return convertedDate;
   };
