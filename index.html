@@ -116,7 +116,7 @@
     .results .date-line { font-weight: 700; color: #1e293b }
     .results .equiv { font-size: .9rem; color: #475569 }
     .muted { color: var(--muted) }
-    footer { margin-top: 10px; font-size: .82rem; color: var(--muted); text-align: center }
+    footer { margin-top: 24px; font-size: .85rem; color: var(--muted); text-align: center; line-height: 1.6; }
     .tiny { font-size: .78rem }
   </style>
 <script type="importmap">
@@ -203,6 +203,7 @@
           <button id="swapBtn" class="btn btn--ghost" title="جابجایی دو تاریخ">جابجایی</button>
           <button id="saveBtn" class="btn btn--alt" title="ذخیره ورودی‌ها و نتایج به‌صورت تصویر">ذخیره تصویر</button>
         </div>
+        <div id="mainError" class="helper error" style="display:none; margin-top: 12px; text-align: center; border-style: solid; padding: 12px; font-size: .9rem;"></div>
       </div>
 
       <div class="card card--results">
@@ -229,7 +230,8 @@
     </div>
 
     <footer>
-      ساخته‌شده برای محاسبات عونا — سبک، فارسی، و قابل‌استفاده در موبایل/کامپیوتر.
+      ساخته‌شده برای محاسبات عونا — سبک، فارسی، و قابل‌استفاده در موبایل/کامپیوتر.<br>
+      طراحی شده توسط الناز مختار کلیمی (کارشناسی ارشد مامایی) و مهندس شهروز برال
     </footer>
   </div>
 
@@ -436,6 +438,7 @@
       r3: document.querySelector('#r3 .date-line'),
       r3e: document.querySelector('#r3 .equiv'),
       r3Note: document.getElementById('r3Note'),
+      mainError: document.getElementById('mainError'),
     };
 
     // -------------------------
@@ -550,17 +553,18 @@
       er.style.display = error ? '' : 'none';
       er.textContent = error;
     }
+    
+    const clearResults = () => {
+        els.r1.textContent = '—'; els.r1e.textContent = '—';
+        els.r2.textContent = '—'; els.r2e.textContent = '—';
+        els.r3.textContent = '—'; els.r3e.textContent = '—'; els.r3Note.textContent = '';
+    };
 
     function computeResults() {
       const gPrev = state.prev.g;
       const gCurr = state.curr.g;
 
-      const clear = () => {
-        els.r1.textContent = '—'; els.r1e.textContent = '—';
-        els.r2.textContent = '—'; els.r2e.textContent = '—';
-        els.r3.textContent = '—'; els.r3e.textContent = '—'; els.r3Note.textContent = '';
-      };
-      if (!gPrev || !gCurr) { clear(); return; }
+      if (!gPrev || !gCurr) { clearResults(); return; }
 
       // نتیجه ۱: +29 روز
       const r1d = addDays(gCurr, 29);
@@ -612,6 +616,25 @@
     els.calculateBtn.addEventListener('click', () => {
         updateHelper('prev');
         updateHelper('curr');
+        
+        els.mainError.style.display = 'none';
+        els.mainError.textContent = '';
+        
+        const gPrev = state.prev.g;
+        const gCurr = state.curr.g;
+
+        if (!gPrev || !gCurr) {
+            clearResults();
+            return;
+        }
+        
+        if (gCurr.getTime() <= gPrev.getTime()) {
+            els.mainError.textContent = 'خطا: تاریخ قاعدگی جاری باید جدیدتر از تاریخ قبلی باشد.';
+            els.mainError.style.display = 'block';
+            clearResults();
+            return;
+        }
+
         computeResults();
     });
 

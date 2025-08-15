@@ -1,10 +1,14 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { UI_STRINGS } from './constants';
 import { calculateOnaDates } from './utils/calendar';
 import type { CalculationResult, CalendarType, DateParts } from './types';
 import Header from './components/Header';
 import DateInputGroup from './components/DateInputGroup';
 import ResultCard from './components/ResultCard';
+
+// These globals come from script tags, assuming they are loaded in index.html
+declare const jalaali: any;
+declare const hebcal: any;
 
 const toPersianNumber = (n: number | string): string => {
   if (n === undefined || n === null) return '';
@@ -20,6 +24,33 @@ export default function App(): React.ReactNode {
   
   const [results, setResults] = useState<CalculationResult | null>(null);
   const [error, setError] = useState<string>('');
+
+  const setDefaultDates = useCallback((cal: CalendarType) => {
+    if (cal === 'shamsi' && typeof jalaali === 'undefined') return;
+    if (cal === 'hebrew' && typeof hebcal === 'undefined') return;
+
+    const today = new Date();
+    const prior = new Date();
+    prior.setDate(today.getDate() - 30); // Approx. 1 month ago
+
+    if (cal === 'shamsi') {
+      const todayShamsi = jalaali.toJalaali(today);
+      const priorShamsi = jalaali.toJalaali(prior);
+      setLastPeriod({ year: todayShamsi.jy, month: todayShamsi.jm, day: todayShamsi.jd });
+      setPrevPeriod({ year: priorShamsi.jy, month: priorShamsi.jm, day: priorShamsi.jd });
+    } else { // hebrew
+      const todayHebrew = new hebcal.HDate(today);
+      const priorHebrew = new hebcal.HDate(prior);
+      setLastPeriod({ year: todayHebrew.year, month: todayHebrew.month, day: todayHebrew.day });
+      setPrevPeriod({ year: priorHebrew.year, month: priorHebrew.month, day: priorHebrew.day });
+    }
+  }, []);
+
+  // Set initial dates on first render
+  useEffect(() => {
+    setDefaultDates('shamsi');
+  }, [setDefaultDates]);
+
 
   const handleCalculate = useCallback(() => {
     setError('');
@@ -48,8 +79,7 @@ export default function App(): React.ReactNode {
 
   const handleCalendarChange = (type: CalendarType) => {
     setCalendarType(type);
-    setLastPeriod(initialDate);
-    setPrevPeriod(initialDate);
+    setDefaultDates(type);
     setResults(null);
     setError('');
   };
