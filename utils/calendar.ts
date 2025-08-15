@@ -12,7 +12,7 @@ const toPersianNumber = (n: number | string): string => {
 const formatHebrewDatePersian = (hdate: any): string => {
   if (!hdate) return "";
   const day = toPersianNumber(hdate.day);
-  const monthKey = hdate.month_str.replace("Shevat", "Sh'vat");
+  const monthKey = hdate.month_str;
   const month = HEBREW_MONTHS_PERSIAN[monthKey] || hdate.month_str;
   const year = toPersianNumber(hdate.year);
   return `${day} ${month} ${year}`;
@@ -31,7 +31,7 @@ const shamsiToGregorian = (dateParts: DateParts): Date | null => {
   try {
     // jalaali.toGregorian throws an error for invalid dates (e.g., month 1, day 32)
     const { gy, gm, gd } = jalaali.toGregorian(dateParts.year, dateParts.month, dateParts.day);
-    return new Date(gy, gm - 1, gd);
+    return new Date(Date.UTC(gy, gm - 1, gd));
   } catch (e) {
     console.error("Shamsi to Gregorian conversion failed:", e);
     return null;
@@ -60,7 +60,7 @@ const getCalculatedDate = (hdate: any): CalculatedDate => {
   return {
     hebrew: formatHebrewDatePersian(hdate),
     shamsi: formatShamsiDatePersian(shamsiDate),
-    dayOfWeek: DAYS_OF_WEEK_PERSIAN[gregDate.getDay()],
+    dayOfWeek: DAYS_OF_WEEK_PERSIAN[gregDate.getUTCDay()],
   };
 };
 
@@ -75,7 +75,7 @@ export const getEquivalentDateDisplay = (dateParts: DateParts, calendarType: Cal
     if (!gregorianDate) return "تاریخ نامعتبر";
 
     gregorianDate.setUTCHours(12);
-    const dayOfWeek = DAYS_OF_WEEK_PERSIAN[gregorianDate.getDay()];
+    const dayOfWeek = DAYS_OF_WEEK_PERSIAN[gregorianDate.getUTCDay()];
     
     if (calendarType === 'shamsi') {
         const hdate = new hebcal.HDate(gregorianDate);

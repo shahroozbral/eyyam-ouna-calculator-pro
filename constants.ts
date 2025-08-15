@@ -1,15 +1,21 @@
 export const HEBREW_MONTHS_PERSIAN: { [key: string]: string } = {
   "Nisan": "نیسان",
   "Iyyar": "ایار",
+  "Iyar": "ایار", // Variation
   "Sivan": "سیوان",
   "Tammuz": "تموز",
+  "Tamuz": "تموز", // Variation
   "Av": "آو",
   "Elul": "الول",
   "Tishrei": "تیشری",
+  "Tishri": "تیشری", // Variation
   "Cheshvan": "خشوان",
+  "Heshvan": "خشوان", // Variation
   "Kislev": "کیسلو",
   "Tevet": "طوت",
+  "Teveth": "طوت", // Variation
   "Sh'vat": "شواط",
+  "Shevat": "شواط", // Variation
   "Adar": "ادار", // For non-leap years
   "Adar I": "ادار", // For leap years
   "Adar II": "ادار ب", // For leap years

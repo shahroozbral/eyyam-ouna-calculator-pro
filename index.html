@@ -247,18 +247,18 @@
 
     // نگاشت نام انگلیسی عبری به اندیس ترتیب مذهبی
     function heEnglishMonthToIndexAndFA(name) {
-      const n = name.toLowerCase();
+      const n = name.toLowerCase().trim();
       if (n.startsWith("nisan")) return {i:1, fa:"نیسان"};
-      if (n.startsWith("iyyar") || n.startsWith("iyar") || n.startsWith("iyyar") || n.startsWith("iyy")) return {i:2, fa:"ایار"};
+      if (n.startsWith("iyyar") || n.startsWith("iyar")) return {i:2, fa:"ایار"};
       if (n.startsWith("sivan")) return {i:3, fa:"سیوان"};
-      if (n.startsWith("tammuz")) return {i:4, fa:"تموز"};
+      if (n.startsWith("tammuz") || n.startsWith("tamuz")) return {i:4, fa:"تموز"};
       if (n === "av") return {i:5, fa:"آو"};
       if (n.startsWith("elul")) return {i:6, fa:"الول"};
       if (n.startsWith("tishri") || n.startsWith("tishrei")) return {i:7, fa:"تیشری"};
       if (n.startsWith("heshvan") || n.startsWith("cheshvan")) return {i:8, fa:"خشوان"};
       if (n.startsWith("kislev")) return {i:9, fa:"کیسلو"};
       if (n.startsWith("tevet") || n.startsWith("teveth")) return {i:10, fa:"طوت"};
-      if (n.startsWith("shevat")) return {i:11, fa:"شواط"};
+      if (n.startsWith("shevat") || n.startsWith("sh'vat")) return {i:11, fa:"شواط"};
       if (n === "adar i" || n === "adar i.") return {i:12, fa:"ادار"};
       if (n === "adar ii" || n === "adar ii.") return {i:13, fa:"ادار ب"};
       if (n === "adar") return {i:12, fa:"ادار"};
