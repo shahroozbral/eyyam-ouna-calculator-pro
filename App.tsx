@@ -1,10 +1,5 @@
-import React, { useState, useCallback, useEffect } from 'react';
-import { UI_STRINGS } from './constants';
-import { calculateOnaDates } from './utils/calendar';
-import type { CalculationResult, CalendarType, DateParts } from './types';
-import Header from './components/Header';
-import DateInputGroup from './components/DateInputGroup';
-import ResultCard from './components/ResultCard';
+import React from 'react';
+import PersianCalculator from './components/PersianCalculator';
 
 // These globals come from script tags, assuming they are loaded in index.html
 declare const jalaali: any;

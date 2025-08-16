@@ -29,14 +29,12 @@ export default function DateInputGroup({
         onChange={onCalendarTypeChange}
       />
       <DatePickerSelect
-        key={`last-${calendarType}`}
         label={UI_STRINGS.lastPeriodLabel}
         calendarType={calendarType}
         value={lastPeriod}
         onChange={onLastPeriodChange}
       />
       <DatePickerSelect
-        key={`prev-${calendarType}`}
         label={UI_STRINGS.previousPeriodLabel}
         calendarType={calendarType}
         value={prevPeriod}
