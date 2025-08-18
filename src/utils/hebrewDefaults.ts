@@ -16,8 +16,8 @@ export const getHebrewDefaultDates = (): { lastPeriod: DateParts; prevPeriod: Da
     // Get today's Hebrew date
     const today = new hebcal.HDate();
     
-    // Get Hebrew date one month ago
-    const oneMonthAgo = new hebcal.HDate(today).subtract(1, 'm');
+    // Get Hebrew date one month ago (subtract 30 days)
+    const oneMonthAgo = new hebcal.HDate(today).subtract(30);
 
     return {
       lastPeriod: {
