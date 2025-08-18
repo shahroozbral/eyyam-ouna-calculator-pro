@@ -1,6 +1,6 @@
 import React from 'react';
-import OnaCalculator from './src/components/OnaCalculator';
+import PersianCalculator from './src/components/PersianCalculator';
 
 export default function App(): React.ReactNode {
-  return <OnaCalculator />;
+  return <PersianCalculator />;
 }
