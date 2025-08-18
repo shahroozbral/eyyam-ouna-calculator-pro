@@ -49,6 +49,23 @@
       box-shadow: var(--shadow);
       padding: 16px;
     }
+    .description-card {
+      font-size: .95rem;
+      line-height: 1.8;
+      color: #0c4a6e; /* sky-800 */
+      background: #f0f9ff; /* sky-50 */
+      border-color: #bae6fd; /* sky-200 */
+    }
+    .description-card ul {
+      padding-right: 20px;
+      margin: 0;
+    }
+    .description-card li::marker {
+      color: var(--accent-2);
+    }
+    .description-card strong {
+      color: #075985; /* sky-700 */
+    }
     @media (min-width: 880px) {
       .card--inputs { grid-column: span 7; }
       .card--results { grid-column: span 5; }
@@ -94,11 +111,10 @@
     .calendar-toggle button.active { color: #ffffff; background: #4f46e5; font-weight: bold; }
     .helper {
       font-size: .84rem; color: #475569; background: #f1f5f9; border: 1px dashed #cbd5e1;
-      padding: 10px; border-radius: 10px; margin-top: 8px;
+      padding: 10px; border-radius: 10px; margin-top: 8px; text-align: center;
     }
-    .helper .weak { color: var(--muted); }
     .helper .equiv { margin-top: 4px; }
-    .helper .error { color: var(--danger); font-weight: 700; }
+    .helper .error { color: var(--danger); font-weight: 700; margin-top: 6px; }
     .btn {
       cursor: pointer; font-weight: bold;
       transition: transform .06s ease, box-shadow .2s ease, background .2s;
@@ -129,11 +145,680 @@
   }
 }
 </script>
-<script src="https://unpkg.com/@hebcal/core@5.4.11/dist/bundle.min.js"></script>
-<link rel="stylesheet" href="/index.css">
 </head>
 <body>
-  <div id="root"></div>
-  <script type="module" src="/index.tsx"></script>
+  <div class="container">
+    <header>
+      <div class="title">محاسبه‌گر ایام عونا</div>
+    </header>
+
+    <div class="cards">
+      <div class="card description-card">
+        <ul>
+          <li>این برنامه توانایی محاسبه ایام عونا بر اساس تاریخ عبری و شمسی را دارد.</li>
+          <li>لطفا در هنگام ورود تاریخ این نکته را مد نظر قرار دهید: اگر تاریخ قاعدگی (برای مثال) در روز ۱ فروردین ۱۴۰۴ (معادل ۲۱ ادار ۵۷۸۵) و <strong>قبل از غروب آفتاب</strong> باشد، همان روز را وارد کنید. اگر <strong>بعد از غروب آفتاب</strong> باشد، تاریخ باید به روز بعد، یعنی ۲ فروردین ۱۴۰۴ (معادل ۲۲ ادار ۵۷۸۵) تغییر پیدا کند.</li>
+        </ul>
+      </div>
+
+      <div class="card card--inputs">
+        <div class="section-title">ورود تاریخ‌ها</div>
+        
+        <div style="text-align: center; margin-bottom: 16px;">
+          <div class="calendar-toggle" id="mainCalendarToggle">
+            <button class="active" data-cal="fa">شمسی</button>
+            <button data-cal="he">عبری</button>
+          </div>
+        </div>
+
+        <div class="row row--two">
+          <div class="block" id="blockPrev">
+            <h4>تاریخ قاعدگی قبلی</h4>
+            <div class="inline" style="margin-top:10px">
+              <div>
+                <label>روز</label>
+                <select id="prevDay"></select>
+              </div>
+              <div>
+                <label>ماه</label>
+                <select id="prevMonth"></select>
+              </div>
+              <div>
+                <label>سال</label>
+                <select id="prevYear"></select>
+              </div>
+            </div>
+
+            <div id="prevHelper" class="helper tiny">
+              <div class="equiv">معادل: —</div>
+              <div class="error" style="display:none"></div>
+            </div>
+          </div>
+
+          <div class="block" id="blockCurr">
+            <h4>تاریخ قاعدگی جاری</h4>
+            <div class="inline" style="margin-top:10px">
+              <div>
+                <label>روز</label>
+                <select id="currDay"></select>
+              </div>
+              <div>
+                <label>ماه</label>
+                <select id="currMonth"></select>
+              </div>
+              <div>
+                <label>سال</label>
+                <select id="currYear"></select>
+              </div>
+            </div>
+
+            <div id="currHelper" class="helper tiny">
+              <div class="equiv">معادل: —</div>
+              <div class="error" style="display:none"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="main-actions" style="margin-top: 20px; display: flex; gap: 12px; justify-content: center;">
+          <button id="calculateBtn" class="btn btn--primary" style="flex-grow: 1; padding: 12px;">محاسبه</button>
+          <button id="swapBtn" class="btn btn--ghost" title="جابجایی دو تاریخ">جابجایی</button>
+          <button id="saveBtn" class="btn btn--alt" title="ذخیره ورودی‌ها و نتایج به‌صورت تصویر">ذخیره تصویر</button>
+        </div>
+        <div id="mainError" class="helper error" style="display:none; margin-top: 12px; text-align: center; border-style: solid; padding: 12px; font-size: .9rem;"></div>
+      </div>
+
+      <div class="card card--results">
+        <div class="section-title">نتایج محاسبات</div>
+        <div class="results" id="results">
+          <div class="item" id="r1">
+            <h5>نتیجه ۱: ۳۰ روز پس از قاعدگی جاری (با احتساب روز خودش)</h5>
+            <div class="date-line">—</div>
+            <div class="equiv muted">—</div>
+          </div>
+          <div class="item" id="r2">
+            <h5>نتیجه ۲: قاعدگی جاری + فاصله دو قاعدگی اخیر</h5>
+            <div class="date-line">—</div>
+            <div class="equiv muted">—</div>
+          </div>
+          <div class="item" id="r3">
+            <h5>نتیجه ۳: همان روز تاریخ قاعدگی جاری در ماه بعد عبری</h5>
+            <div class="date-line">—</div>
+            <div class="equiv muted">—</div>
+            <div class="muted tiny" id="r3Note"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      ساخته‌شده برای محاسبات عونا — سبک، فارسی، و قابل‌استفاده در موبایل/کامپیوتر.<br>
+      طراحی شده توسط الناز مختار کلیمی (کارشناسی ارشد مامایی) و مهندس شهروز برال
+    </footer>
+  </div>
+
+  <script>
+    // -------------------------
+    // داده‌ها و ابزارهای عمومی
+    // -------------------------
+    const MS = 86400000;
+
+    const faMonths = ["فروردین","اردیبهشت","خرداد","تیر","مرداد","شهریور","مهر","آبان","آذر","دی","بهمن","اسفند"];
+    // ترتیب عبری (سال مذهبی) مطابق درخواست: نیسان تا ادار/ادار ب
+    const heMonthsFA = ["نیسان","ایار","سیوان","تموز","آو","الول","تیشری","خشوان","کیسلو","طوت","شواط","ادار","ادار ب"];
+
+    // نگاشت نام انگلیسی عبری به اندیس ترتیب مذهبی
+    function heEnglishMonthToIndexAndFA(name) {
+      const n = name.toLowerCase().trim();
+      if (n.startsWith("nisan")) return {i:1, fa:"نیسان"};
+      if (n.startsWith("iyyar") || n.startsWith("iyar")) return {i:2, fa:"ایار"};
+      if (n.startsWith("sivan")) return {i:3, fa:"سیوان"};
+      if (n.startsWith("tammuz") || n.startsWith("tamuz")) return {i:4, fa:"تموز"};
+      if (n === "av") return {i:5, fa:"آو"};
+      if (n.startsWith("elul")) return {i:6, fa:"الول"};
+      if (n.startsWith("tishri") || n.startsWith("tishrei")) return {i:7, fa:"تیشری"};
+      if (n.startsWith("heshvan") || n.startsWith("cheshvan")) return {i:8, fa:"خشوان"};
+      if (n.startsWith("kislev")) return {i:9, fa:"کیسلو"};
+      if (n.startsWith("tevet") || n.startsWith("teveth")) return {i:10, fa:"طوت"};
+      if (n.startsWith("shevat") || n.startsWith("sh'vat")) return {i:11, fa:"شواط"};
+      if (n === "adar i" || n === "adar i.") return {i:12, fa:"ادار"};
+      if (n === "adar ii" || n === "adar ii.") return {i:13, fa:"ادار ب"};
+      if (n === "adar") return {i:12, fa:"ادار"};
+      // fallback
+      return {i:12, fa:"ادار"};
+    }
+
+    const faDigits = ["۰","۱","۲","۳","۴","۵","۶","۷","۸","۹"];
+    function toFa(num) {
+      return String(num).replace(/\d/g, d => faDigits[+d]);
+    }
+    function fromFa(str) {
+      return String(str).replace(/[۰-۹]/g, d => String(faDigits.indexOf(d))).replace(/[^\d\-]/g,'');
+    }
+
+    const fmtFaWeekday = new Intl.DateTimeFormat('fa-IR', { weekday:'long' });
+    const fmtFaPersian = new Intl.DateTimeFormat('fa-IR-u-ca-persian', { year:'numeric', month:'numeric', day:'numeric' });
+    const fmtHeEn = new Intl.DateTimeFormat('en-US-u-ca-hebrew', { year:'numeric', month:'long', day:'numeric' });
+
+    function getFaWeekday(d){ return fmtFaWeekday.format(d); }
+
+    // تبدیل گِرِگوریَن -> شمسی (اعداد و نام ماه فارسی)
+    function formatPersianFromG(d) {
+      const parts = fmtFaPersian.formatToParts(d);
+      const y = +fromFa(parts.find(p=>p.type==='year').value);
+      const m = +fromFa(parts.find(p=>p.type==='month').value);
+      const day = +fromFa(parts.find(p=>p.type==='day').value);
+      return {
+        y, m, d: day,
+        monthName: faMonths[m-1],
+        weekday: getFaWeekday(d),
+        text: `${getFaWeekday(d)} ${toFa(day)} ${faMonths[m-1]} ${toFa(y)}`
+      };
+    }
+
+    // تبدیل گِرِگوریَن -> عبری (نام انگلیسی -> اندیس/نام فارسی)
+    function formatHebrewFromG(d) {
+      const parts = fmtHeEn.formatToParts(d);
+      const y = +parts.find(p=>p.type==='year').value;
+      const day = +parts.find(p=>p.type==='day').value;
+      const mNameEn = parts.find(p=>p.type==='month').value;
+      const {i: monthIndex, fa: monthFA} = heEnglishMonthToIndexAndFA(mNameEn);
+      return {
+        y, mIndex: monthIndex, d: day,
+        monthName: monthFA,
+        weekday: getFaWeekday(d),
+        text: `${getFaWeekday(d)} ${toFa(day)} ${monthFA} ${toFa(y)}`
+      };
+    }
+
+    // یافتن تاریخ گِرِگوریَن از ورودی شمسی با جستجو در بازه‌ای مطمئن
+    function gregorianFromPersian(y, m, day) {
+      // بازه تقریبی: از 1 ژانویه (y+621) تا 31 دسامبر (y+622)
+      const start = new Date(y+621, 0, 1);
+      const end = new Date(y+622, 11, 31);
+      for (let t = start.getTime(); t <= end.getTime(); t += MS) {
+        const d = new Date(t);
+        const p = formatPersianFromG(d);
+        if (p.y === y && p.m === m && p.d === day) return d;
+      }
+      return null;
+    }
+
+    // یافتن تاریخ گِرِگوریَن از ورودی عبری با جستجو در بازه‌ای مطمئن
+    function gregorianFromHebrew(y, mIndex, day) {
+      // سال عبری تقریباً = میلادی + 3760/3761
+      const g = y - 3760;
+      const start = new Date(g-1, 0, 1);
+      const end = new Date(g+1, 11, 31);
+      for (let t = start.getTime(); t <= end.getTime(); t += MS) {
+        const d = new Date(t);
+        const h = formatHebrewFromG(d);
+        if (h.y === y && h.mIndex === mIndex && h.d === day) return d;
+      }
+      return null;
+    }
+
+    // طول ماه شمسی (برای تنظیم روزها): 1..6 = 31، 7..11 = 30، 12 = 29/30
+    const faMonthFixedLengths = [31,31,31,31,31,31,30,30,30,30,30];
+    const persianLeapCache = new Map();
+    function isPersianLeap(y) {
+      if (persianLeapCache.has(y)) return persianLeapCache.get(y);
+      const has30Esfand = !!gregorianFromPersian(y, 12, 30);
+      persianLeapCache.set(y, has30Esfand);
+      return has30Esfand;
+    }
+    function persianMonthLength(y, m) {
+      if (m >=1 && m <= 11) return faMonthFixedLengths[m-1];
+      return isPersianLeap(y) ? 30 : 29;
+    }
+
+    // افزودن روز به تاریخ گِرِگوریَن
+    function addDays(d, n) {
+      const r = new Date(d.getTime());
+      r.setDate(r.getDate() + n);
+      return r;
+    }
+
+    // اختلاف روزی بین دو تاریخ (d2 - d1)
+    function diffDays(d2, d1) {
+      const a = Date.UTC(d2.getFullYear(), d2.getMonth(), d2.getDate());
+      const b = Date.UTC(d1.getFullYear(), d1.getMonth(), d1.getDate());
+      return Math.round((a-b)/MS);
+    }
+
+    // یافتن «همان روز عبری» در ماه بعد (با قاعده ۳۰→۱ اگر ماه بعد ۲۹ روزه باشد)
+    function hebrewSameDayNextMonthFromG(gDate) {
+      const h0 = formatHebrewFromG(gDate);
+      const targetDay = Math.min(30, h0.d); // ورودی عبری 1..30
+      // پیدا کردن اول ماه بعد
+      let cur = addDays(gDate, 1);
+      let nextRosh = null;
+      while (true) {
+        const h = formatHebrewFromG(cur);
+        if (h.d === 1 && !(h.mIndex === h0.mIndex && h.y === h0.y)) { nextRosh = new Date(cur); break; }
+        cur = addDays(cur, 1);
+      }
+      // اولِ ماهِ بعدِ بعد
+      cur = addDays(nextRosh, 1);
+      let afterNextRosh = null;
+      while (true) {
+        const h = formatHebrewFromG(cur);
+        const nextH = formatHebrewFromG(nextRosh);
+        if (h.d === 1 && !(h.mIndex === nextH.mIndex && h.y === nextH.y)) { afterNextRosh = new Date(cur); break; }
+        cur = addDays(cur, 1);
+      }
+      const nextMonthLength = diffDays(afterNextRosh, nextRosh); // 29 یا 30
+      if (targetDay <= nextMonthLength) {
+        return addDays(nextRosh, targetDay - 1);
+      } else {
+        // قاعده‌ی خواسته‌شده: اگر روز ۳۰ وجود نداشت، روز اولِ ماهِ بعدِ بعد
+        return new Date(afterNextRosh);
+      }
+    }
+
+    // قالب خروجی دوبل (شمسی + عبری)
+    function dualDisplay(gDate) {
+      const P = formatPersianFromG(gDate);
+      const H = formatHebrewFromG(gDate);
+      return {
+        faText: P.text,
+        heText: `${toFa(H.d)} ${H.monthName} ${toFa(H.y)}`,
+        weekday: P.weekday,
+        lineFa: P.text,
+        lineHe: `${toFa(H.d)} ${H.monthName} ${toFa(H.y)}`
+      };
+    }
+
+    // -------------------------
+    // وضعیت و المان‌ها
+    // -------------------------
+    const state = {
+      prev: { cal: 'fa', y: null, m: 1, d: 1, g: null },
+      curr: { cal: 'fa', y: null, m: 1, d: 1, g: null }
+    };
+
+    const els = {
+      // prev
+      prevDay: document.getElementById('prevDay'),
+      prevMonth: document.getElementById('prevMonth'),
+      prevYear: document.getElementById('prevYear'),
+      prevHelper: document.getElementById('prevHelper'),
+      // curr
+      currDay: document.getElementById('currDay'),
+      currMonth: document.getElementById('currMonth'),
+      currYear: document.getElementById('currYear'),
+      currHelper: document.getElementById('currHelper'),
+      // actions
+      calculateBtn: document.getElementById('calculateBtn'),
+      swapBtn: document.getElementById('swapBtn'),
+      saveBtn: document.getElementById('saveBtn'),
+      // results
+      r1: document.querySelector('#r1 .date-line'),
+      r1e: document.querySelector('#r1 .equiv'),
+      r2: document.querySelector('#r2 .date-line'),
+      r2e: document.querySelector('#r2 .equiv'),
+      r3: document.querySelector('#r3 .date-line'),
+      r3e: document.querySelector('#r3 .equiv'),
+      r3Note: document.getElementById('r3Note'),
+      mainError: document.getElementById('mainError'),
+    };
+
+    // -------------------------
+    // ساخت گزینه‌های ورودی
+    // -------------------------
+    function currentPersianYear() {
+      const p = formatPersianFromG(new Date());
+      return p.y;
+    }
+    function currentHebrewYear() {
+      const h = formatHebrewFromG(new Date());
+      return h.y;
+    }
+
+    function fillDays(select, maxDay) {
+      const cur = +fromFa(select.value || '1');
+      select.innerHTML = '';
+      for (let d = 1; d <= maxDay; d++) {
+        const opt = document.createElement('option');
+        opt.value = String(d);
+        opt.textContent = toFa(d);
+        if (d === Math.min(cur, maxDay)) opt.selected = true;
+        select.appendChild(opt);
+      }
+    }
+
+    function fillMonths(select, cal) {
+      select.innerHTML = '';
+      const months = cal === 'fa' ? faMonths : heMonthsFA;
+      months.forEach((name, i) => {
+        const opt = document.createElement('option');
+        opt.value = String(i+1);
+        opt.textContent = name;
+        select.appendChild(opt);
+      });
+    }
+
+    function fillYears(select, cal) {
+      select.innerHTML = '';
+      const nowY = cal === 'fa' ? currentPersianYear() : currentHebrewYear();
+      const years = [];
+      for (let y = nowY-2; y <= nowY+2; y++) years.push(y);
+      years.forEach(y => {
+        const opt = document.createElement('option');
+        opt.value = String(y);
+        opt.textContent = toFa(y);
+        select.appendChild(opt);
+      });
+      // انتخاب سال جاری
+      select.value = String(nowY);
+    }
+
+    function setupBlock(which) {
+      const isFa = state[which].cal === 'fa';
+      const dayEl = els[which+'Day'];
+      const monthEl = els[which+'Month'];
+      const yearEl = els[which+'Year'];
+
+      fillMonths(monthEl, isFa ? 'fa' : 'he');
+      fillYears(yearEl, isFa ? 'fa' : 'he');
+      if (isFa) {
+        const y = +fromFa(yearEl.value);
+        const m = +monthEl.value;
+        fillDays(dayEl, persianMonthLength(y, m));
+      } else {
+        fillDays(dayEl, 30);
+      }
+    }
+
+    function updateHelper(which) {
+      const cal = state[which].cal;
+      const dayEl = els[which+'Day'];
+      const monthEl = els[which+'Month'];
+      const yearEl = els[which+'Year'];
+      const helper = els[which+'Helper'];
+      const day = +fromFa(dayEl.value);
+      const month = +monthEl.value;
+      const year = +fromFa(yearEl.value);
+
+      let g = null;
+      let equivFa = '—';
+      let w = '—';
+      let error = '';
+
+      if (cal === 'fa') {
+        g = gregorianFromPersian(year, month, day);
+        if (!g) {
+          error = 'تاریخ شمسی نامعتبر است (روز/ماه/سال را بررسی کنید).';
+        } else {
+          const H = formatHebrewFromG(g);
+          equivFa = `${toFa(H.d)} ${H.monthName} ${toFa(H.y)}`;
+          w = getFaWeekday(g);
+        }
+      } else {
+        g = gregorianFromHebrew(year, month, day);
+        if (!g) {
+          error = 'تاریخ عبری نامعتبر است (روز/ماه/سال را بررسی کنید).';
+        } else {
+          const P = formatPersianFromG(g);
+          equivFa = `${toFa(P.d)} ${P.monthName} ${toFa(P.y)}`;
+          w = getFaWeekday(g);
+        }
+      }
+
+      state[which].d = day; state[which].m = month; state[which].y = year; state[which].g = g;
+
+      const eq = helper.querySelector('.equiv');
+      const er = helper.querySelector('.error');
+
+      if (g) {
+        eq.textContent = `معادل: ${w} ${equivFa}`;
+      } else {
+        eq.textContent = 'معادل: —';
+      }
+      
+      er.style.display = error ? '' : 'none';
+      er.textContent = error;
+    }
+    
+    const clearResults = () => {
+        els.r1.textContent = '—'; els.r1e.textContent = '—';
+        els.r2.textContent = '—'; els.r2e.textContent = '—';
+        els.r3.textContent = '—'; els.r3e.textContent = '—'; els.r3Note.textContent = '';
+    };
+
+    function computeResults() {
+      const gPrev = state.prev.g;
+      const gCurr = state.curr.g;
+
+      if (!gPrev || !gCurr) { clearResults(); return; }
+
+      // نتیجه ۱: +29 روز
+      const r1d = addDays(gCurr, 29);
+      const R1 = dualDisplay(r1d);
+      els.r1.textContent = R1.lineFa;
+      els.r1e.textContent = `معادل عبری: ${R1.lineHe}`;
+
+      // نتیجه ۲: اختلاف دو قاعدگی
+      const delta = Math.max(0, diffDays(gCurr, gPrev));
+      const r2d = addDays(gCurr, delta);
+      const R2 = dualDisplay(r2d);
+      els.r2.textContent = R2.lineFa + ` (${toFa(delta)} روز بعد)`;
+      els.r2e.textContent = `معادل عبری: ${R2.lineHe}`;
+
+      // نتیجه ۳: همان روز عبری در ماه بعد (قاعده ۳۰→۱ در ماه ۲۹‌روزه)
+      const r3d = hebrewSameDayNextMonthFromG(gCurr);
+      const R3 = dualDisplay(r3d);
+      els.r3.textContent = R3.lineFa;
+      els.r3e.textContent = `معادل عبری: ${R3.lineHe}`;
+      // یادداشت در صورت اعمال قاعده ۳۰→۱
+      const h0 = formatHebrewFromG(gCurr);
+      const appliedRule = (h0.d === 30) && (formatHebrewFromG(r3d).d === 1);
+      els.r3Note.textContent = appliedRule ? 'یادداشت: ماه عبری بعد ۲۹ روزه بود؛ بنابراین روز اولِ ماهِ بعدِ بعد انتخاب شد.' : '';
+    }
+
+    // رویدادهای ورودی‌ها
+    function attachIO(which) {
+      const d = els[which+'Day'], m = els[which+'Month'], y = els[which+'Year'];
+      m.addEventListener('change', () => {
+        if (state[which].cal === 'fa') {
+          const yy = +fromFa(y.value), mm = +m.value;
+          fillDays(d, persianMonthLength(yy, mm));
+        }
+        updateHelper(which);
+      });
+      y.addEventListener('change', () => {
+        if (state[which].cal === 'fa') {
+          const yy = +fromFa(y.value), mm = +m.value;
+          fillDays(d, persianMonthLength(yy, mm));
+        } else {
+          fillDays(d, 30);
+        }
+        updateHelper(which);
+      });
+      d.addEventListener('change', () => updateHelper(which));
+    }
+
+    function setDefaultDates(cal) {
+        const todayG = new Date();
+        const prevGuessG = addDays(todayG, -30);
+
+        const todayTarget = cal === 'fa' ? formatPersianFromG(todayG) : formatHebrewFromG(todayG);
+        const prevTarget = cal === 'fa' ? formatPersianFromG(prevGuessG) : formatHebrewFromG(prevGuessG);
+        
+        // Set values for Current Date
+        els.currYear.value = String(todayTarget.y);
+        els.currMonth.value = String(cal === 'fa' ? todayTarget.m : todayTarget.mIndex);
+        if (cal === 'fa') {
+            fillDays(els.currDay, persianMonthLength(todayTarget.y, todayTarget.m));
+        } else {
+            fillDays(els.currDay, 30);
+        }
+        els.currDay.value = String(todayTarget.d);
+        
+        // Set values for Previous Date
+        els.prevYear.value = String(prevTarget.y);
+        els.prevMonth.value = String(cal === 'fa' ? prevTarget.m : prevTarget.mIndex);
+        if (cal === 'fa') {
+            fillDays(els.prevDay, persianMonthLength(prevTarget.y, prevTarget.m));
+        } else {
+            fillDays(els.prevDay, 30);
+        }
+        els.prevDay.value = String(prevTarget.d);
+        
+        updateHelper('prev');
+        updateHelper('curr');
+    }
+    
+    // دکمه محاسبه
+    els.calculateBtn.addEventListener('click', () => {
+        updateHelper('prev');
+        updateHelper('curr');
+        
+        els.mainError.style.display = 'none';
+        els.mainError.textContent = '';
+        
+        const gPrev = state.prev.g;
+        const gCurr = state.curr.g;
+
+        if (!gPrev || !gCurr) {
+            clearResults();
+            return;
+        }
+        
+        if (gCurr.getTime() <= gPrev.getTime()) {
+            els.mainError.textContent = 'خطا: تاریخ قاعدگی جاری باید جدیدتر از تاریخ قبلی باشد.';
+            els.mainError.style.display = 'block';
+            clearResults();
+            return;
+        }
+
+        computeResults();
+    });
+
+    // دکمه جابجایی
+    els.swapBtn.addEventListener('click', () => {
+      const p = state.prev, c = state.curr;
+      // تعویض وضعیت
+      const tmp = JSON.parse(JSON.stringify(p));
+      state.prev = c; state.curr = tmp;
+
+      // باز-رندر ورودی‌ها طبق وضعیت جدید
+      // prev
+      setupBlock('prev');
+      els.prevYear.value = String(state.prev.y ?? (state.prev.cal==='fa'?currentPersianYear():currentHebrewYear()));
+      els.prevMonth.value = String(state.prev.m ?? 1);
+      fillDays(els.prevDay, state.prev.cal==='fa' ? persianMonthLength(+fromFa(els.prevYear.value), +els.prevMonth.value) : 30);
+      els.prevDay.value = String(state.prev.d ?? 1);
+
+      // curr
+      setupBlock('curr');
+      els.currYear.value = String(state.curr.y ?? (state.curr.cal==='fa'?currentPersianYear():currentHebrewYear()));
+      els.currMonth.value = String(state.curr.m ?? 1);
+      fillDays(els.currDay, state.curr.cal==='fa' ? persianMonthLength(+fromFa(els.currYear.value), +els.currMonth.value) : 30);
+      els.currDay.value = String(state.curr.d ?? 1);
+
+      updateHelper('prev'); updateHelper('curr');
+    });
+
+    // ذخیره تصویر: ترسیم متن‌ها روی Canvas
+    els.saveBtn.addEventListener('click', () => {
+      const gPrev = state.prev.g, gCurr = state.curr.g;
+      if (!gPrev || !gCurr) { alert('ابتدا هر دو تاریخ را معتبر وارد کنید.'); return; }
+
+      const Pprev = dualDisplay(gPrev);
+      const Pcurr = dualDisplay(gCurr);
+
+      const r1d = addDays(gCurr, 29), R1 = dualDisplay(r1d);
+      const delta = Math.max(0, diffDays(gCurr, gPrev));
+      const r2d = addDays(gCurr, delta), R2 = dualDisplay(r2d);
+      const r3d = hebrewSameDayNextMonthFromG(gCurr), R3 = dualDisplay(r3d);
+
+      const W = 1080, H = 720;
+      const cnv = document.createElement('canvas');
+      cnv.width = W; cnv.height = H;
+      const ctx = cnv.getContext('2d');
+
+      // پس‌زمینه
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0,0,W,H);
+
+      // عنوان
+      ctx.fillStyle = '#1e3a8a';
+      ctx.font = 'bold 28px sans-serif';
+      ctx.fillText('محاسبه‌گر ایام عونا', 40, 50);
+
+      ctx.fillStyle = '#334155';
+      ctx.font = 'bold 22px sans-serif';
+      ctx.fillText('ورودی‌ها', 40, 90);
+
+      ctx.font = '18px sans-serif'; ctx.fillStyle = '#0f172a';
+      ctx.fillText('قاعدگی قبلی:', 40, 125);
+      ctx.fillText(Pprev.lineFa + '  |  عبری: ' + Pprev.lineHe, 180, 125);
+
+      ctx.fillText('قاعدگی جاری:', 40, 155);
+      ctx.fillText(Pcurr.lineFa + '  |  عبری: ' + Pcurr.lineHe, 180, 155);
+
+      // خط جداکننده
+      ctx.strokeStyle = '#e2e8f0'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(40, 185); ctx.lineTo(W-40, 185); ctx.stroke();
+
+      // نتایج
+      ctx.fillStyle = '#334155'; ctx.font = 'bold 22px sans-serif';
+      ctx.fillText('نتایج', 40, 220);
+
+      ctx.font = 'bold 18px sans-serif'; ctx.fillStyle = '#4f46e5';
+      ctx.fillText('نتیجه ۱:', 40, 255);
+      ctx.fillStyle = '#0f172a'; ctx.font = '18px sans-serif';
+      ctx.fillText(R1.lineFa, 120, 255);
+      ctx.fillStyle = '#1d4ed8';
+      ctx.fillText('عبری: ' + R1.lineHe, 120, 280);
+
+      ctx.fillStyle = '#4f46e5'; ctx.font = 'bold 18px sans-serif';
+      ctx.fillText('نتیجه ۲:', 40, 320);
+      ctx.fillStyle = '#0f172a'; ctx.font = '18px sans-serif';
+      ctx.fillText(R2.lineFa + `  (${toFa(delta)} روز بعد)`, 120, 320);
+      ctx.fillStyle = '#1d4ed8';
+      ctx.fillText('عبری: ' + R2.lineHe, 120, 345);
+
+      ctx.fillStyle = '#4f46e5'; ctx.font = 'bold 18px sans-serif';
+      ctx.fillText('نتیجه ۳:', 40, 385);
+      ctx.fillStyle = '#0f172a'; ctx.font = '18px sans-serif';
+      ctx.fillText(R3.lineFa, 120, 385);
+      ctx.fillStyle = '#1d4ed8';
+      ctx.fillText('عبری: ' + R3.lineHe, 120, 410);
+
+      // واترمارک کوچک
+      ctx.fillStyle = '#64748b'; ctx.font = '14px sans-serif';
+      ctx.fillText('ساخته‌شده برای محاسبات عونا — نسخه سبک', 40, H-30);
+
+      const a = document.createElement('a');
+      a.download = 'eyam-ona.png';
+      a.href = cnv.toDataURL('image/png');
+      a.click();
+    });
+
+    // مقداردهی اولیه
+    const mainToggle = document.getElementById('mainCalendarToggle');
+    mainToggle.querySelectorAll('button').forEach(btn => {
+        btn.addEventListener('click', () => {
+            mainToggle.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            const newCal = btn.dataset.cal;
+            state.prev.cal = newCal;
+            state.curr.cal = newCal;
+            setupBlock('prev');
+            setupBlock('curr');
+            setDefaultDates(newCal);
+        });
+    });
+    
+    attachIO('prev');
+    attachIO('curr');
+
+    // حالت شروع: هر دو شمسی با تاریخ امروز و امروز-۳۰
+    state.prev.cal = 'fa'; state.curr.cal = 'fa';
+    setupBlock('prev');
+    setupBlock('curr');
+    setDefaultDates('fa');
+
+  </script>
 </body>
 </html>
