@@ -21,4 +21,6 @@
     "typescript": "~5.8.2",
     "vite": "^6.2.0"
   }
+  "build:dev": "vite build --mode development"
+
 }
