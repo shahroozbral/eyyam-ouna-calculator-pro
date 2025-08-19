@@ -9,8 +9,7 @@ export default defineConfig(({ mode }) => {
     return {
       plugins: [
         react(),
-        mode === 'development' && componentTagger(),
-        tailwindcss()
+        mode === 'development' && componentTagger()
       ].filter(Boolean),
       server: {
         host: "::",
