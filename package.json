@@ -9,9 +9,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "autoprefixer": "^10.4.21",
+    "jalaali-js": "^1.2.8",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
-    "jalaali-js": "^1.2.8"
+    "tailwindcss": "^4.1.12"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
