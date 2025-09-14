@@ -691,7 +691,7 @@ const PersianCalculator: React.FC = () => {
           const r3d = nextHebrewMonthSameDay(gCurr), R3 = dualDisplay(r3d);
 
           const cnv = document.createElement('canvas');
-          const W = 900, H = 600;
+          const W = 1000, H = 700;
           cnv.width = W; cnv.height = H;
           const ctx = cnv.getContext('2d');
           
@@ -711,168 +711,201 @@ const PersianCalculator: React.FC = () => {
               this.closePath();
             };
           }
+
+          // تابع رسم متن RTL با موقعیت درست
+          const drawRTLText = (text, x, y, fontSize = 16, fontWeight = 'normal', color = '#ffffff') => {
+            ctx.fillStyle = color;
+            ctx.font = \`\${fontWeight} \${fontSize}px Arial, sans-serif\`;
+            ctx.textAlign = 'right';
+            ctx.fillText(text, x, y);
+          };
+
+          // تابع رسم آیکون زیبا
+          const drawIcon = (x, y, size, color) => {
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(x, y, size/2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = 'rgba(255,255,255,0.3)';
+            ctx.beginPath();
+            ctx.arc(x - size/4, y - size/4, size/6, 0, Math.PI * 2);
+            ctx.fill();
+          };
           
-          // تنظیم RTL direction
-          ctx.direction = 'rtl';
-          ctx.textAlign = 'right';
-          
-          // پس‌زمینه زیبا با گرادیان
-          const bgGradient = ctx.createLinearGradient(0, 0, W, H);
-          bgGradient.addColorStop(0, '#0f172a');
-          bgGradient.addColorStop(0.3, '#1e293b');
-          bgGradient.addColorStop(0.7, '#111827');
-          bgGradient.addColorStop(1, '#0b1020');
+          // پس‌زمینه زیبا با گرادیان پیچیده
+          const bgGradient = ctx.createRadialGradient(W/2, H/3, 0, W/2, H/3, W);
+          bgGradient.addColorStop(0, '#1a1a2e');
+          bgGradient.addColorStop(0.3, '#16213e');
+          bgGradient.addColorStop(0.6, '#0f172a');
+          bgGradient.addColorStop(1, '#020617');
           ctx.fillStyle = bgGradient;
           ctx.fillRect(0, 0, W, H);
 
-          // پترن نقطه‌ای زیبا در پس‌زمینه
-          ctx.fillStyle = 'rgba(167, 243, 208, 0.02)';
-          for(let x = 0; x < W; x += 30) {
-            for(let y = 0; y < H; y += 30) {
-              ctx.fillRect(x, y, 2, 2);
+          // پترن نقطه‌ای درخشان
+          ctx.fillStyle = 'rgba(167, 243, 208, 0.05)';
+          for(let x = 0; x < W; x += 40) {
+            for(let y = 0; y < H; y += 40) {
+              ctx.beginPath();
+              ctx.arc(x, y, 2, 0, Math.PI * 2);
+              ctx.fill();
             }
           }
 
-          // سایه برای کارت اصلی
-          ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
-          ctx.shadowBlur = 20;
-          ctx.shadowOffsetX = 0;
-          ctx.shadowOffsetY = 10;
+          // خطوط تزئینی در پس‌زمینه
+          ctx.strokeStyle = 'rgba(167, 243, 208, 0.1)';
+          ctx.lineWidth = 1;
+          for(let i = 0; i < 5; i++) {
+            ctx.beginPath();
+            ctx.moveTo(W - i * 200, 0);
+            ctx.lineTo(W - i * 200 - 100, H);
+            ctx.stroke();
+          }
 
-          // کارت اصلی
-          const cardGradient = ctx.createLinearGradient(0, 60, 0, H-60);
-          cardGradient.addColorStop(0, 'rgba(30, 41, 59, 0.8)');
-          cardGradient.addColorStop(1, 'rgba(15, 23, 42, 0.9)');
+          // سایه برای کارت اصلی
+          ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+          ctx.shadowBlur = 30;
+          ctx.shadowOffsetX = 0;
+          ctx.shadowOffsetY = 15;
+
+          // کارت اصلی با گرادیان پیچیده
+          const cardGradient = ctx.createLinearGradient(0, 80, 0, H-80);
+          cardGradient.addColorStop(0, 'rgba(30, 41, 59, 0.95)');
+          cardGradient.addColorStop(0.5, 'rgba(15, 23, 42, 0.9)');
+          cardGradient.addColorStop(1, 'rgba(2, 6, 23, 0.95)');
           ctx.fillStyle = cardGradient;
-          ctx.roundRect(40, 60, W-80, H-120, 20);
+          ctx.roundRect(50, 80, W-100, H-160, 25);
           ctx.fill();
 
-          // حاشیه کارت
-          ctx.strokeStyle = 'rgba(167, 243, 208, 0.2)';
-          ctx.lineWidth = 2;
-          ctx.roundRect(40, 60, W-80, H-120, 20);
+          // حاشیه درخشان کارت
+          const borderGradient = ctx.createLinearGradient(0, 80, 0, H-80);
+          borderGradient.addColorStop(0, 'rgba(167, 243, 208, 0.6)');
+          borderGradient.addColorStop(0.5, 'rgba(34, 197, 94, 0.4)');
+          borderGradient.addColorStop(1, 'rgba(167, 243, 208, 0.6)');
+          ctx.strokeStyle = borderGradient;
+          ctx.lineWidth = 3;
+          ctx.roundRect(50, 80, W-100, H-160, 25);
           ctx.stroke();
 
           // ریست سایه
           ctx.shadowColor = 'transparent';
 
-          // عنوان اصلی - RTL
-          const titleGradient = ctx.createLinearGradient(W-80, 0, 80, 0);
+          // آیکون و عنوان اصلی
+          drawIcon(W-120, 130, 40, '#34d399');
+          const titleGradient = ctx.createLinearGradient(W-80, 0, W-300, 0);
           titleGradient.addColorStop(0, '#a7f3d0');
           titleGradient.addColorStop(1, '#34d399');
-          ctx.fillStyle = titleGradient;
-          ctx.font = 'bold 32px Arial, sans-serif';
-          ctx.fillText('محاسبه‌گر ایام عونا', W-80, 110);
+          drawRTLText('محاسبه‌گر ایام عونا', W-80, 140, 36, 'bold', titleGradient);
 
           // خط تزئینی زیر عنوان
-          const decorLine = ctx.createLinearGradient(W-400, 0, W-80, 0);
-          decorLine.addColorStop(0, 'transparent');
-          decorLine.addColorStop(0.3, '#a7f3d0');
-          decorLine.addColorStop(0.7, '#34d399');
-          decorLine.addColorStop(1, 'transparent');
-          ctx.strokeStyle = decorLine;
-          ctx.lineWidth = 3;
+          const decorGradient = ctx.createLinearGradient(W-80, 0, W-500, 0);
+          decorGradient.addColorStop(0, '#a7f3d0');
+          decorGradient.addColorStop(0.5, '#34d399');
+          decorGradient.addColorStop(1, 'transparent');
+          ctx.strokeStyle = decorGradient;
+          ctx.lineWidth = 4;
           ctx.beginPath();
-          ctx.moveTo(W-400, 125);
-          ctx.lineTo(W-80, 125);
+          ctx.moveTo(W-80, 155);
+          ctx.lineTo(W-500, 155);
           ctx.stroke();
 
-          // بخش ورودی‌ها
-          ctx.fillStyle = '#e2e8f0';
-          ctx.font = 'bold 24px Arial, sans-serif';
-          ctx.fillText('ورودی‌ها', W-80, 170);
+          // بخش ورودی‌ها با آیکون
+          drawIcon(W-120, 200, 25, '#60a5fa');
+          drawRTLText('ورودی‌ها', W-80, 210, 26, 'bold', '#e2e8f0');
 
-          // کارت ورودی قبلی
-          ctx.fillStyle = 'rgba(59, 130, 246, 0.1)';
-          ctx.roundRect(80, 190, W-160, 60, 12);
+          // کارت ورودی قبلی با سایه
+          ctx.shadowColor = 'rgba(59, 130, 246, 0.3)';
+          ctx.shadowBlur = 15;
+          const prevCardGrad = ctx.createLinearGradient(0, 240, 0, 310);
+          prevCardGrad.addColorStop(0, 'rgba(59, 130, 246, 0.2)');
+          prevCardGrad.addColorStop(1, 'rgba(59, 130, 246, 0.05)');
+          ctx.fillStyle = prevCardGrad;
+          ctx.roundRect(100, 240, W-200, 70, 15);
           ctx.fill();
           
-          ctx.fillStyle = '#60a5fa';
-          ctx.font = 'bold 18px Arial, sans-serif';
-          ctx.fillText('قاعدگی قبلی:', W-100, 215);
-          
-          ctx.fillStyle = '#f1f5f9';
-          ctx.font = '16px Arial, sans-serif';
-          const prevText = \`\${Pprev.lineFa}   |   عبری: \${Pprev.lineHe}\`;
-          ctx.fillText(prevText, W-100, 235);
-
-          // کارت ورودی جاری
-          ctx.fillStyle = 'rgba(34, 211, 153, 0.1)';
-          ctx.roundRect(80, 270, W-160, 60, 12);
-          ctx.fill();
-          
-          ctx.fillStyle = '#34d399';
-          ctx.font = 'bold 18px Arial, sans-serif';
-          ctx.fillText('قاعدگی جاری:', W-100, 295);
-          
-          ctx.fillStyle = '#f1f5f9';
-          ctx.font = '16px Arial, sans-serif';
-          const currText = \`\${Pcurr.lineFa}   |   عبری: \${Pcurr.lineHe}\`;
-          ctx.fillText(currText, W-100, 315);
-
-          // خط جداکننده زیبا
-          const separatorGradient = ctx.createLinearGradient(80, 0, W-80, 0);
-          separatorGradient.addColorStop(0, 'transparent');
-          separatorGradient.addColorStop(0.2, 'rgba(167, 243, 208, 0.3)');
-          separatorGradient.addColorStop(0.8, 'rgba(167, 243, 208, 0.3)');
-          separatorGradient.addColorStop(1, 'transparent');
-          ctx.strokeStyle = separatorGradient;
+          ctx.shadowColor = 'transparent';
+          ctx.strokeStyle = 'rgba(59, 130, 246, 0.4)';
           ctx.lineWidth = 2;
+          ctx.roundRect(100, 240, W-200, 70, 15);
+          ctx.stroke();
+          
+          drawIcon(W-130, 260, 20, '#60a5fa');
+          drawRTLText('قاعدگی قبلی:', W-80, 265, 20, 'bold', '#93c5fd');
+          drawRTLText(\`\${Pprev.lineFa}\`, W-80, 290, 16, 'normal', '#dbeafe');
+          drawRTLText(\`عبری: \${Pprev.lineHe}\`, W-330, 290, 14, 'normal', '#bfdbfe');
+
+          // کارت ورودی جاری با سایه
+          ctx.shadowColor = 'rgba(34, 197, 94, 0.3)';
+          ctx.shadowBlur = 15;
+          const currCardGrad = ctx.createLinearGradient(0, 330, 0, 400);
+          currCardGrad.addColorStop(0, 'rgba(34, 197, 94, 0.2)');
+          currCardGrad.addColorStop(1, 'rgba(34, 197, 94, 0.05)');
+          ctx.fillStyle = currCardGrad;
+          ctx.roundRect(100, 330, W-200, 70, 15);
+          ctx.fill();
+          
+          ctx.shadowColor = 'transparent';
+          ctx.strokeStyle = 'rgba(34, 197, 94, 0.4)';
+          ctx.lineWidth = 2;
+          ctx.roundRect(100, 330, W-200, 70, 15);
+          ctx.stroke();
+          
+          drawIcon(W-130, 350, 20, '#34d399');
+          drawRTLText('قاعدگی جاری:', W-80, 355, 20, 'bold', '#6ee7b7');
+          drawRTLText(\`\${Pcurr.lineFa}\`, W-80, 380, 16, 'normal', '#d1fae5');
+          drawRTLText(\`عبری: \${Pcurr.lineHe}\`, W-330, 380, 14, 'normal', '#a7f3d0');
+
+          // خط جداکننده مدرن
+          const sepGrad = ctx.createLinearGradient(100, 0, W-100, 0);
+          sepGrad.addColorStop(0, 'transparent');
+          sepGrad.addColorStop(0.1, 'rgba(167, 243, 208, 0.1)');
+          sepGrad.addColorStop(0.5, 'rgba(167, 243, 208, 0.6)');
+          sepGrad.addColorStop(0.9, 'rgba(167, 243, 208, 0.1)');
+          sepGrad.addColorStop(1, 'transparent');
+          ctx.strokeStyle = sepGrad;
+          ctx.lineWidth = 3;
           ctx.beginPath();
-          ctx.moveTo(80, 360);
-          ctx.lineTo(W-80, 360);
+          ctx.moveTo(100, 430);
+          ctx.lineTo(W-100, 430);
           ctx.stroke();
 
           // عنوان نتایج
-          ctx.fillStyle = '#e2e8f0';
-          ctx.font = 'bold 24px Arial, sans-serif';
-          ctx.fillText('نتایج محاسبات', W-80, 395);
+          drawIcon(W-120, 470, 25, '#f59e0b');
+          drawRTLText('نتایج محاسبات', W-80, 480, 26, 'bold', '#fbbf24');
 
-          // نتیجه ۱
-          ctx.fillStyle = 'rgba(251, 191, 36, 0.1)';
-          ctx.roundRect(80, 415, W-160, 45, 10);
-          ctx.fill();
-          
-          ctx.fillStyle = '#fbbf24';
-          ctx.font = 'bold 16px Arial, sans-serif';
-          ctx.fillText('نتیجه ۱ - ۳۰ روز بعد:', W-100, 435);
-          ctx.fillStyle = '#fef3c7';
-          ctx.font = '15px Arial, sans-serif';
-          ctx.fillText(\`\${R1.lineFa}   |   عبری: \${R1.lineHe}\`, W-100, 450);
+          // نتایج با طراحی مدرن
+          const results = [
+            { title: 'نتیجه ۱ - ۳۰ روز بعد:', data: R1, color: '#fbbf24', bg: 'rgba(251, 191, 36, 0.15)', y: 510 },
+            { title: \`نتیجه ۲ - \${toFa(delta)} روز بعد:\`, data: R2, color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.15)', y: 590 },
+            { title: 'نتیجه ۳ - ماه عبری بعد:', data: R3, color: '#ec4899', bg: 'rgba(236, 72, 153, 0.15)', y: 670 }
+          ];
 
-          // نتیجه ۲
-          ctx.fillStyle = 'rgba(139, 92, 246, 0.1)';
-          ctx.roundRect(80, 475, W-160, 45, 10);
-          ctx.fill();
-          
-          ctx.fillStyle = '#8b5cf6';
-          ctx.font = 'bold 16px Arial, sans-serif';
-          ctx.fillText(\`نتیجه ۲ - \${toFa(delta)} روز بعد:\`, W-100, 495);
-          ctx.fillStyle = '#e9d5ff';
-          ctx.font = '15px Arial, sans-serif';
-          ctx.fillText(\`\${R2.lineFa}   |   عبری: \${R2.lineHe}\`, W-100, 510);
-
-          // نتیجه ۳
-          ctx.fillStyle = 'rgba(236, 72, 153, 0.1)';
-          ctx.roundRect(80, 535, W-160, 45, 10);
-          ctx.fill();
-          
-          ctx.fillStyle = '#ec4899';
-          ctx.font = 'bold 16px Arial, sans-serif';
-          ctx.fillText('نتیجه ۳ - ماه عبری بعد:', W-100, 555);
-          ctx.fillStyle = '#fce7f3';
-          ctx.font = '15px Arial, sans-serif';
-          ctx.fillText(\`\${R3.lineFa}   |   عبری: \${R3.lineHe}\`, W-100, 570);
+          results.forEach((result, index) => {
+            ctx.shadowColor = \`\${result.color}30\`;
+            ctx.shadowBlur = 10;
+            
+            ctx.fillStyle = result.bg;
+            ctx.roundRect(100, result.y, W-200, 65, 12);
+            ctx.fill();
+            
+            ctx.shadowColor = 'transparent';
+            ctx.strokeStyle = \`\${result.color}80\`;
+            ctx.lineWidth = 2;
+            ctx.roundRect(100, result.y, W-200, 65, 12);
+            ctx.stroke();
+            
+            drawIcon(W-130, result.y + 20, 18, result.color);
+            drawRTLText(result.title, W-80, result.y + 25, 18, 'bold', result.color);
+            drawRTLText(\`\${result.data.lineFa}\`, W-80, result.y + 50, 15, 'normal', '#f1f5f9');
+            drawRTLText(\`عبری: \${result.data.lineHe}\`, W-350, result.y + 50, 13, 'normal', '#cbd5e1');
+          });
 
           // واترمارک زیبا
-          ctx.fillStyle = 'rgba(148, 163, 184, 0.6)';
-          ctx.font = '12px Arial, sans-serif';
           ctx.textAlign = 'center';
-          ctx.fillText('ساخته‌شده برای محاسبات عونا — طراحی زیبا و کاربردی', W/2, H-20);
+          drawRTLText('ساخته‌شده برای محاسبات عونا — طراحی زیبا و کاربردی', W/2, H-30, 14, 'normal', 'rgba(148, 163, 184, 0.8)');
 
           const a = document.createElement('a');
-          a.download = 'eyam-ona-beautiful.png';
-          a.href = cnv.toDataURL('image/png', 0.9);
+          a.download = 'eyam-ona-rtl-beautiful.png';
+          a.href = cnv.toDataURL('image/png', 0.95);
           a.click();
         });
 
