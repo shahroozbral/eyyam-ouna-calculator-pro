@@ -677,7 +677,7 @@ const PersianCalculator: React.FC = () => {
           updateHelper('prev'); updateHelper('curr');
         });
 
-        // ذخیره تصویر: ترسیم متن‌ها روی Canvas
+        // ذخیره تصویر: ترسیم متن‌ها روی Canvas با طراحی زیبا و راست به چپ
         els.saveBtn.addEventListener('click', () => {
           const gPrev = state.prev.g, gCurr = state.curr.g;
           if (!gPrev || !gCurr) { alert('ابتدا هر دو تاریخ را معتبر وارد کنید.'); return; }
@@ -688,68 +688,191 @@ const PersianCalculator: React.FC = () => {
           const r1d = addDays(gCurr, 29), R1 = dualDisplay(r1d);
           const delta = Math.max(0, diffDays(gCurr, gPrev));
           const r2d = addDays(gCurr, delta), R2 = dualDisplay(r2d);
-          const r3d = hebrewSameDayNextMonthFromG(gCurr), R3 = dualDisplay(r3d);
+          const r3d = nextHebrewMonthSameDay(gCurr), R3 = dualDisplay(r3d);
 
-          const W = 1080, H = 720;
           const cnv = document.createElement('canvas');
+          const W = 900, H = 600;
           cnv.width = W; cnv.height = H;
           const ctx = cnv.getContext('2d');
+          
+          // پلی‌فیل برای roundRect در مرورگرهای قدیمی
+          if (!ctx.roundRect) {
+            ctx.roundRect = function(x, y, w, h, r) {
+              this.beginPath();
+              this.moveTo(x + r, y);
+              this.lineTo(x + w - r, y);
+              this.quadraticCurveTo(x + w, y, x + w, y + r);
+              this.lineTo(x + w, y + h - r);
+              this.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+              this.lineTo(x + r, y + h);
+              this.quadraticCurveTo(x, y + h, x, y + h - r);
+              this.lineTo(x, y + r);
+              this.quadraticCurveTo(x, y, x + r, y);
+              this.closePath();
+            };
+          }
+          
+          // تنظیم RTL direction
+          ctx.direction = 'rtl';
+          ctx.textAlign = 'right';
+          
+          // پس‌زمینه زیبا با گرادیان
+          const bgGradient = ctx.createLinearGradient(0, 0, W, H);
+          bgGradient.addColorStop(0, '#0f172a');
+          bgGradient.addColorStop(0.3, '#1e293b');
+          bgGradient.addColorStop(0.7, '#111827');
+          bgGradient.addColorStop(1, '#0b1020');
+          ctx.fillStyle = bgGradient;
+          ctx.fillRect(0, 0, W, H);
 
-          // پس‌زمینه
-          const grd = ctx.createLinearGradient(0,0,0,H);
-          grd.addColorStop(0, '#0b1020'); grd.addColorStop(1, '#0a0f1d');
-          ctx.fillStyle = grd; ctx.fillRect(0,0,W,H);
+          // پترن نقطه‌ای زیبا در پس‌زمینه
+          ctx.fillStyle = 'rgba(167, 243, 208, 0.02)';
+          for(let x = 0; x < W; x += 30) {
+            for(let y = 0; y < H; y += 30) {
+              ctx.fillRect(x, y, 2, 2);
+            }
+          }
 
-          // عنوان
-          ctx.fillStyle = '#a7f3d0'; ctx.font = 'bold 28px sans-serif';
-          ctx.fillText('محاسبه‌گر ایام عونا', 40, 50);
+          // سایه برای کارت اصلی
+          ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+          ctx.shadowBlur = 20;
+          ctx.shadowOffsetX = 0;
+          ctx.shadowOffsetY = 10;
 
-          ctx.fillStyle = '#cbd5e1'; ctx.font = 'bold 22px sans-serif';
-          ctx.fillText('ورودی‌ها', 40, 90);
+          // کارت اصلی
+          const cardGradient = ctx.createLinearGradient(0, 60, 0, H-60);
+          cardGradient.addColorStop(0, 'rgba(30, 41, 59, 0.8)');
+          cardGradient.addColorStop(1, 'rgba(15, 23, 42, 0.9)');
+          ctx.fillStyle = cardGradient;
+          ctx.roundRect(40, 60, W-80, H-120, 20);
+          ctx.fill();
 
-          ctx.font = '18px sans-serif'; ctx.fillStyle = '#e5e7eb';
-          ctx.fillText('قاعدگی قبلی:', 40, 125);
-          ctx.fillText(Pprev.lineFa + '  |  عبری: ' + Pprev.lineHe, 180, 125);
+          // حاشیه کارت
+          ctx.strokeStyle = 'rgba(167, 243, 208, 0.2)';
+          ctx.lineWidth = 2;
+          ctx.roundRect(40, 60, W-80, H-120, 20);
+          ctx.stroke();
 
-          ctx.fillText('قاعدگی جاری:', 40, 155);
-          ctx.fillText(Pcurr.lineFa + '  |  عبری: ' + Pcurr.lineHe, 180, 155);
+          // ریست سایه
+          ctx.shadowColor = 'transparent';
 
-          // خط جداکننده
-          ctx.strokeStyle = 'rgba(255,255,255,.2)'; ctx.lineWidth = 1;
-          ctx.beginPath(); ctx.moveTo(40, 185); ctx.lineTo(W-40, 185); ctx.stroke();
+          // عنوان اصلی - RTL
+          const titleGradient = ctx.createLinearGradient(W-80, 0, 80, 0);
+          titleGradient.addColorStop(0, '#a7f3d0');
+          titleGradient.addColorStop(1, '#34d399');
+          ctx.fillStyle = titleGradient;
+          ctx.font = 'bold 32px Arial, sans-serif';
+          ctx.fillText('محاسبه‌گر ایام عونا', W-80, 110);
 
-          // نتایج
-          ctx.fillStyle = '#cbd5e1'; ctx.font = 'bold 22px sans-serif';
-          ctx.fillText('نتایج', 40, 220);
+          // خط تزئینی زیر عنوان
+          const decorLine = ctx.createLinearGradient(W-400, 0, W-80, 0);
+          decorLine.addColorStop(0, 'transparent');
+          decorLine.addColorStop(0.3, '#a7f3d0');
+          decorLine.addColorStop(0.7, '#34d399');
+          decorLine.addColorStop(1, 'transparent');
+          ctx.strokeStyle = decorLine;
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.moveTo(W-400, 125);
+          ctx.lineTo(W-80, 125);
+          ctx.stroke();
 
-          ctx.font = 'bold 18px sans-serif'; ctx.fillStyle = '#a7f3d0';
-          ctx.fillText('نتیجه ۱:', 40, 255);
-          ctx.fillStyle = '#e5e7eb'; ctx.font = '18px sans-serif';
-          ctx.fillText(R1.lineFa, 120, 255);
-          ctx.fillStyle = '#93c5fd';
-          ctx.fillText('عبری: ' + R1.lineHe, 120, 280);
+          // بخش ورودی‌ها
+          ctx.fillStyle = '#e2e8f0';
+          ctx.font = 'bold 24px Arial, sans-serif';
+          ctx.fillText('ورودی‌ها', W-80, 170);
 
-          ctx.fillStyle = '#a7f3d0'; ctx.font = 'bold 18px sans-serif';
-          ctx.fillText('نتیجه ۲:', 40, 320);
-          ctx.fillStyle = '#e5e7eb'; ctx.font = '18px sans-serif';
-          ctx.fillText(R2.lineFa + \`  (\${toFa(delta)} روز بعد)\`, 120, 320);
-          ctx.fillStyle = '#93c5fd';
-          ctx.fillText('عبری: ' + R2.lineHe, 120, 345);
+          // کارت ورودی قبلی
+          ctx.fillStyle = 'rgba(59, 130, 246, 0.1)';
+          ctx.roundRect(80, 190, W-160, 60, 12);
+          ctx.fill();
+          
+          ctx.fillStyle = '#60a5fa';
+          ctx.font = 'bold 18px Arial, sans-serif';
+          ctx.fillText('قاعدگی قبلی:', W-100, 215);
+          
+          ctx.fillStyle = '#f1f5f9';
+          ctx.font = '16px Arial, sans-serif';
+          const prevText = \`\${Pprev.lineFa}   |   عبری: \${Pprev.lineHe}\`;
+          ctx.fillText(prevText, W-100, 235);
 
-          ctx.fillStyle = '#a7f3d0'; ctx.font = 'bold 18px sans-serif';
-          ctx.fillText('نتیجه ۳:', 40, 385);
-          ctx.fillStyle = '#e5e7eb'; ctx.font = '18px sans-serif';
-          ctx.fillText(R3.lineFa, 120, 385);
-          ctx.fillStyle = '#93c5fd';
-          ctx.fillText('عبری: ' + R3.lineHe, 120, 410);
+          // کارت ورودی جاری
+          ctx.fillStyle = 'rgba(34, 211, 153, 0.1)';
+          ctx.roundRect(80, 270, W-160, 60, 12);
+          ctx.fill();
+          
+          ctx.fillStyle = '#34d399';
+          ctx.font = 'bold 18px Arial, sans-serif';
+          ctx.fillText('قاعدگی جاری:', W-100, 295);
+          
+          ctx.fillStyle = '#f1f5f9';
+          ctx.font = '16px Arial, sans-serif';
+          const currText = \`\${Pcurr.lineFa}   |   عبری: \${Pcurr.lineHe}\`;
+          ctx.fillText(currText, W-100, 315);
 
-          // واترمارک کوچک
-          ctx.fillStyle = '#94a3b8'; ctx.font = '14px sans-serif';
-          ctx.fillText('ساخته‌شده برای محاسبات عونا — نسخه سبک', 40, H-30);
+          // خط جداکننده زیبا
+          const separatorGradient = ctx.createLinearGradient(80, 0, W-80, 0);
+          separatorGradient.addColorStop(0, 'transparent');
+          separatorGradient.addColorStop(0.2, 'rgba(167, 243, 208, 0.3)');
+          separatorGradient.addColorStop(0.8, 'rgba(167, 243, 208, 0.3)');
+          separatorGradient.addColorStop(1, 'transparent');
+          ctx.strokeStyle = separatorGradient;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(80, 360);
+          ctx.lineTo(W-80, 360);
+          ctx.stroke();
+
+          // عنوان نتایج
+          ctx.fillStyle = '#e2e8f0';
+          ctx.font = 'bold 24px Arial, sans-serif';
+          ctx.fillText('نتایج محاسبات', W-80, 395);
+
+          // نتیجه ۱
+          ctx.fillStyle = 'rgba(251, 191, 36, 0.1)';
+          ctx.roundRect(80, 415, W-160, 45, 10);
+          ctx.fill();
+          
+          ctx.fillStyle = '#fbbf24';
+          ctx.font = 'bold 16px Arial, sans-serif';
+          ctx.fillText('نتیجه ۱ - ۳۰ روز بعد:', W-100, 435);
+          ctx.fillStyle = '#fef3c7';
+          ctx.font = '15px Arial, sans-serif';
+          ctx.fillText(\`\${R1.lineFa}   |   عبری: \${R1.lineHe}\`, W-100, 450);
+
+          // نتیجه ۲
+          ctx.fillStyle = 'rgba(139, 92, 246, 0.1)';
+          ctx.roundRect(80, 475, W-160, 45, 10);
+          ctx.fill();
+          
+          ctx.fillStyle = '#8b5cf6';
+          ctx.font = 'bold 16px Arial, sans-serif';
+          ctx.fillText(\`نتیجه ۲ - \${toFa(delta)} روز بعد:\`, W-100, 495);
+          ctx.fillStyle = '#e9d5ff';
+          ctx.font = '15px Arial, sans-serif';
+          ctx.fillText(\`\${R2.lineFa}   |   عبری: \${R2.lineHe}\`, W-100, 510);
+
+          // نتیجه ۳
+          ctx.fillStyle = 'rgba(236, 72, 153, 0.1)';
+          ctx.roundRect(80, 535, W-160, 45, 10);
+          ctx.fill();
+          
+          ctx.fillStyle = '#ec4899';
+          ctx.font = 'bold 16px Arial, sans-serif';
+          ctx.fillText('نتیجه ۳ - ماه عبری بعد:', W-100, 555);
+          ctx.fillStyle = '#fce7f3';
+          ctx.font = '15px Arial, sans-serif';
+          ctx.fillText(\`\${R3.lineFa}   |   عبری: \${R3.lineHe}\`, W-100, 570);
+
+          // واترمارک زیبا
+          ctx.fillStyle = 'rgba(148, 163, 184, 0.6)';
+          ctx.font = '12px Arial, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('ساخته‌شده برای محاسبات عونا — طراحی زیبا و کاربردی', W/2, H-20);
 
           const a = document.createElement('a');
-          a.download = 'eyam-ona.png';
-          a.href = cnv.toDataURL('image/png');
+          a.download = 'eyam-ona-beautiful.png';
+          a.href = cnv.toDataURL('image/png', 0.9);
           a.click();
         });
 
